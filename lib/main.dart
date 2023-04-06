@@ -14,8 +14,8 @@ class IndoorNavigationApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       home: Scaffold(
-        appBar: AppBar(title: Text('Indoor Navigation')),
-        body: IndoorNavigationMap(),
+        appBar: AppBar(title: const Text('Indoor Navigation')),
+        body: const IndoorNavigationMap(),
       ),
     );
   }
