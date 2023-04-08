@@ -34,63 +34,63 @@ class IndoorNavigationMap extends StatefulWidget {
   _IndoorNavigationMapState createState() => _IndoorNavigationMapState();
 }
 
-/*
+
 class _IndoorNavigationMapState extends State<IndoorNavigationMap> {
-  Location _location = Location();
+  final Location _location = Location();
 
   @override
   Widget build(BuildContext context) {
     return FlutterMap(
       options: MapOptions(
-        center: LatLng(51.5074, -0.1278), // Replace with your initial coordinates
-        zoom: 18.0,
+        center: LatLng(43.468523, -79.700456), // Replace with your initial coordinates
+        zoom: 18.0, // Set the initial zoom level.
+        maxZoom: 22.0, // Set the maximum zoom level.
       ),
       layers: [
         TileLayerOptions(
-          urlTemplate: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-          subdomains: ['a', 'b', 'c'],
+          urlTemplate: 'https://api.maptiler.com/tiles/46faaaf4-1e47-4c14-8911-3becb667b1b0/{z}/{x}/{y}.png?key=9FoelL2TTrBdRJSCStUK',
         ),
       ],
     );
   }
 }
-*/
-class _IndoorNavigationMapState extends State<IndoorNavigationMap> {
-  // Sample custom markers
-  List<CustomMarker> markers = [
-    CustomMarker(label: 'A', position: const Offset(50, 100)),
-    CustomMarker(label: 'B', position: const Offset(150, 200)),
-    CustomMarker(label: 'C', position: const Offset(250, 300)),
-  ];
 
-  @override
-  Widget build(BuildContext context) {
-    return Stack(
-      children: [
-        Image.asset('assets/B_building_F1.png', fit: BoxFit.cover),
-        ...markers.map((marker) => _buildMarker(marker)),
-      ],
-    );
-  }
-
-  Widget _buildMarker(CustomMarker marker) {
-    return Positioned(
-      left: marker.position.dx,
-      top: marker.position.dy,
-      child: Container(
-        decoration: BoxDecoration(
-          color: Colors.red,
-          borderRadius: BorderRadius.circular(20),
-        ),
-        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
-        child: Text(
-          marker.label,
-          style: const TextStyle(
-            fontSize: 14,
-            color: Colors.white,
-          ),
-        ),
-      ),
-    );
-  }
-}
+// class _IndoorNavigationMapState extends State<IndoorNavigationMap> {
+//   // Sample custom markers
+//   List<CustomMarker> markers = [
+//     CustomMarker(label: 'A', position: const Offset(50, 100)),
+//     CustomMarker(label: 'B', position: const Offset(150, 200)),
+//     CustomMarker(label: 'C', position: const Offset(250, 300)),
+//   ];
+//
+//   @override
+//   Widget build(BuildContext context) {
+//     return Stack(
+//       children: [
+//         Image.asset('assets/B_building_F1.png', fit: BoxFit.cover),
+//         ...markers.map((marker) => _buildMarker(marker)),
+//       ],
+//     );
+//   }
+//
+//   Widget _buildMarker(CustomMarker marker) {
+//     return Positioned(
+//       left: marker.position.dx,
+//       top: marker.position.dy,
+//       child: Container(
+//         decoration: BoxDecoration(
+//           color: Colors.red,
+//           borderRadius: BorderRadius.circular(20),
+//         ),
+//         padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+//         child: Text(
+//           marker.label,
+//           style: const TextStyle(
+//             fontSize: 14,
+//             color: Colors.white,
+//           ),
+//         ),
+//       ),
+//     );
+//   }
+// }
