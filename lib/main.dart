@@ -52,25 +52,23 @@ class _IndoorNavigationMapState extends State<IndoorNavigationMap> {
 
   @override
   Widget build(BuildContext context) {
-    return FlutterMap(
-      options: MapOptions(
-        center: LatLng(43.468523, -79.700456), // Set the initial location of the map
-        zoom: 16.0,
-      ),
-      layers: [
-        // Add the tile layer to display the map
-        TileLayerOptions(
-          urlTemplate: 'https://{s}.google.com/vt/lyrs=s,h&x={x}&y={y}&z={z}',
-          subdomains: ['mt0', 'mt1', 'mt2', 'mt3'],
+    return Scaffold(
+      body: InteractiveViewer(
+        boundaryMargin: EdgeInsets.all(20),
+        minScale: 0.1,
+        maxScale: 10,
+        child: Stack(
+          children: [
+            Image.asset(
+              'assets/B_building_F1.png',
+              fit: BoxFit.cover,
+              width: MediaQuery.of(context).size.width,
+              height: MediaQuery.of(context).size.height,
+            ),
+            ...markers.map((marker) => _buildMarker(marker)),
+          ],
         ),
-        // Add a marker layer to display the custom markers
-        MarkerLayerOptions(markers: markers.map((marker) {
-          return Marker(
-            point: LatLng(0, 0),
-            builder: (context) => _buildMarker(marker),
-          );
-        }).toList()),
-      ],
+      ),
     );
   }
 
