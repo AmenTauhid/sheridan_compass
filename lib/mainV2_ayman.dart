@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_map/flutter_map.dart';
-import 'package:latlong2/latlong.dart';
-import 'package:location/location.dart';
+import 'package:photo_view/photo_view.dart';
 
 class IndoorNavigationApp extends StatelessWidget {
   const IndoorNavigationApp({Key? key}) : super(key: key);
@@ -34,16 +32,6 @@ class IndoorNavigationMap extends StatefulWidget {
 }
 
 class _IndoorNavigationMapState extends State<IndoorNavigationMap> {
-  final Location _location = Location();
-
-  // List of LatLng objects to represent the location of each marker
-  final List<LatLng> _markers = [
-    LatLng(43.468523, -79.700456), // Marker 1
-    LatLng(43.468923, -79.700256), // Marker 2
-    LatLng(43.468323, -79.700656), // Marker 3
-  ];
-
-  // Sample custom markers
   List<CustomMarker> markers = [
     CustomMarker(label: 'A', position: const Offset(50, 100)),
     CustomMarker(label: 'B', position: const Offset(150, 200)),
@@ -53,10 +41,10 @@ class _IndoorNavigationMapState extends State<IndoorNavigationMap> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: InteractiveViewer(
-        boundaryMargin: const EdgeInsets.all(20),
-        minScale: 0.1,
-        maxScale: 10,
+      body: PhotoView.customChild(
+        backgroundDecoration: const BoxDecoration(color: Colors.white),
+        minScale: PhotoViewComputedScale.contained,
+        maxScale: 10.0,
         child: Stack(
           children: [
             Image.asset(
