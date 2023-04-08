@@ -39,7 +39,7 @@ class _IndoorNavigationMapState extends State<IndoorNavigationMap> {
               backgroundDecoration: const BoxDecoration(color: Colors.white),
               minScale: PhotoViewComputedScale.contained,
               maxScale: 10.0,
-              initialScale: PhotoViewComputedScale.contained * 0.8,
+              initialScale: PhotoViewComputedScale.contained * 2,
             ),
           ),
         ),
@@ -47,5 +47,3 @@ class _IndoorNavigationMapState extends State<IndoorNavigationMap> {
     );
   }
 }
-
-
