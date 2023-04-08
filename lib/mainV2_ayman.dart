@@ -47,11 +47,14 @@ class _IndoorNavigationMapState extends State<IndoorNavigationMap> {
         maxScale: 10.0,
         child: Stack(
           children: [
-            Image.asset(
-              'assets/B_building_F1.png',
-              fit: BoxFit.cover,
-              width: MediaQuery.of(context).size.width,
-              height: MediaQuery.of(context).size.height,
+            AspectRatio(
+              aspectRatio: 1.35, // Replace with the correct aspect ratio for your image
+              child: FittedBox(
+                fit: BoxFit.cover,
+                child: Image.asset(
+                  'assets/B_building_F1.png',
+                ),
+              ),
             ),
             ...markers.map((marker) => _buildMarker(marker)),
           ],
