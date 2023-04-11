@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:photo_view/photo_view.dart';
 
+void main() {
+  runApp(const IndoorNavigationApp());
+}
+
 class IndoorNavigationApp extends StatelessWidget {
   const IndoorNavigationApp({Key? key}) : super(key: key);
 
@@ -13,10 +17,6 @@ class IndoorNavigationApp extends StatelessWidget {
   }
 }
 
-void main() {
-  runApp(const IndoorNavigationApp());
-}
-
 class IndoorNavigationMap extends StatefulWidget {
   const IndoorNavigationMap({Key? key}) : super(key: key);
 
@@ -25,7 +25,14 @@ class IndoorNavigationMap extends StatefulWidget {
 }
 
 class _IndoorNavigationMapState extends State<IndoorNavigationMap> {
+  int _selectedIndex = 0;
   String _searchTerm = '';
+
+  void _onItemTapped(int index) {
+    setState(() {
+      _selectedIndex = index;
+    });
+  }
 
   void _performSearch(String query) {
     // Implement your search logic here
@@ -102,6 +109,59 @@ class _IndoorNavigationMapState extends State<IndoorNavigationMap> {
             ),
           ),
         ],
+      ),
+      bottomNavigationBar: Container(
+        height: 100,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.only(
+            topLeft: Radius.circular(30),
+            topRight: Radius.circular(30),
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.grey.withOpacity(0.5),
+              spreadRadius: 1,
+              blurRadius: 7,
+              offset: Offset(0, -3),
+            ),
+          ],
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.only(
+            topLeft: Radius.circular(30),
+            topRight: Radius.circular(30),
+          ),
+          child: BottomNavigationBar(
+            backgroundColor: Colors.blue,
+            currentIndex: _selectedIndex,
+            selectedItemColor: Colors.white,
+            unselectedItemColor: Colors.black,
+            onTap: _onItemTapped,
+            items: [
+              BottomNavigationBarItem(
+                icon: Icon(
+                  Icons.location_history,
+                  color: _selectedIndex == 0 ? Colors.white : Colors.black,
+                ),
+                label: 'Explore',
+              ),
+              BottomNavigationBarItem(
+                icon: Icon(
+                  Icons.save,
+                  color: _selectedIndex == 1 ? Colors.white : Colors.black,
+                ),
+                label: 'Saved Locations',
+              ),
+              BottomNavigationBarItem(
+                icon: Icon(
+                  Icons.settings,
+                  color: _selectedIndex == 2 ? Colors.white : Colors.black,
+                ),
+                label: 'Settings',
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
