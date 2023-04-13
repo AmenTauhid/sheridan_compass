@@ -7,7 +7,7 @@ void main() {
 }
 
 class MyApp extends StatefulWidget {
-  const MyApp({super.key});
+  const MyApp({Key? key}) : super(key: key);
 
   @override
   State<MyApp> createState() => _MyAppState();
@@ -15,39 +15,17 @@ class MyApp extends StatefulWidget {
 
 class _MyAppState extends State<MyApp> {
   final Map<String, Marker> _markers = {};
+  int _currentIndex = 0;
 
   Future<void> _onMapCreated(GoogleMapController controller) async {
-    final googleOffices = await locations.getGoogleOffices();
     setState(() {
       _markers.clear();
-      for (final office in googleOffices.offices) {
-        final marker = Marker(
-          markerId: MarkerId(office.name),
-          position: LatLng(office.lat, office.lng),
-          infoWindow: InfoWindow(
-            title: office.name,
-            snippet: office.address,
-          ),
-        );
-        _markers[office.name] = marker;
-      }
     });
   }
 
-  int _selectedIndex = 0;
-  String _searchTerm = '';
-
-  void _onItemTapped(int index) {
+  void _onTabTapped(int index) {
     setState(() {
-      _selectedIndex = index;
-    });
-  }
-
-  void _performSearch(String query) {
-    // Implement your search logic here
-    print('Searching for $query');
-    setState(() {
-      _searchTerm = query;
+      _currentIndex = index;
     });
   }
 
@@ -63,13 +41,77 @@ class _MyAppState extends State<MyApp> {
           centerTitle: true,
           elevation: 2,
         ),
-        body: GoogleMap(
-          onMapCreated: _onMapCreated,
-          initialCameraPosition: const CameraPosition(
-            target: LatLng(43.46843248599148, -79.70040205206587), // Oakville Campus coordinates
-            zoom: 17, // Adjust zoom level as needed
+        body: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: TextField(
+                decoration: InputDecoration(
+                  hintText: 'Locate',
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(25.0),
+                  ),
+                ),
+              ),
+            ),
+            Expanded(
+              child: GoogleMap(
+                onMapCreated: _onMapCreated,
+                initialCameraPosition: const CameraPosition(
+                  target: LatLng(43.46843248599148, -79.70040205206587), // Oakville Campus coordinates
+                  zoom: 17, // Adjust zoom level as needed
+                ),
+                markers: _markers.values.toSet(),
+                mapType: MapType.satellite,
+              ),
+            ),
+          ],
+        ),
+        drawer: Drawer(
+          child: Column(
+            children: [
+              const SizedBox(height: 50),
+              const Text(
+                'S Compass',
+                style: TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 10),
+              const Icon(Icons.explore),
+              const SizedBox(height: 20),
+              ElevatedButton(
+                onPressed: () {},
+                child: const Text('About'),
+              ),
+              ElevatedButton(
+                onPressed: () {},
+                child: const Text('Settings'),
+              ),
+              const Spacer(),
+              const Text('2023'),
+              const SizedBox(height: 10),
+            ],
           ),
-          markers: _markers.values.toSet(),
+        ),
+        bottomNavigationBar: BottomNavigationBar(
+          currentIndex: _currentIndex,
+          onTap: _onTabTapped,
+          items: const [
+            BottomNavigationBarItem(
+              icon: Icon(Icons.explore),
+              label: 'Explore',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.bookmark),
+              label: 'Saved Locations',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.settings),
+              label: 'Settings',
+            ),
+          ],
         ),
       ),
     );
