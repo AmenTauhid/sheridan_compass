@@ -20,6 +20,34 @@ class _MyAppState extends State<MyApp> {
 
   Future<void> _onMapCreated(GoogleMapController controller) async {
     _mapController = controller;
+    // Set initial camera position to Sheridan Trafalgar Campus
+    List<geocoding.Location> locations = await geocoding.locationFromAddress("Sheridan Trafalgar Campus");
+    if (locations.isNotEmpty) {
+      geocoding.Location location = locations.first;
+      _mapController.animateCamera(
+        CameraUpdate.newCameraPosition(
+          CameraPosition(
+            target: LatLng(location.latitude!, location.longitude!),
+            zoom: 17.0,
+          ),
+        ),
+      );
+      setState(() {
+        _markers.clear();
+        final marker = Marker(
+          markerId: MarkerId("Sheridan Trafalgar Campus"),
+          position: LatLng(location.latitude!, location.longitude!),
+          infoWindow: InfoWindow(
+            title: "Sheridan Trafalgar Campus",
+            snippet: '${location.latitude}, ${location.longitude}',
+          ),
+        );
+        _markers["Sheridan Trafalgar Campus"] = marker;
+      });
+    } else {
+      // Handle case when location is not found
+      print('Location not found');
+    }
   }
 
   void _searchLocationByName(String locationName) async {
