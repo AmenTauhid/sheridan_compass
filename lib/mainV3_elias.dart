@@ -7,7 +7,7 @@ void main() {
 }
 
 class MyApp extends StatefulWidget {
-  const MyApp({super.key});
+  const MyApp({Key? key}) : super(key: key);
 
   @override
   State<MyApp> createState() => _MyAppState();
@@ -18,20 +18,8 @@ class _MyAppState extends State<MyApp> {
   int _currentIndex = 0;
 
   Future<void> _onMapCreated(GoogleMapController controller) async {
-    final googleOffices = await locations.getGoogleOffices();
     setState(() {
       _markers.clear();
-      for (final office in googleOffices.offices) {
-        final marker = Marker(
-          markerId: MarkerId(office.name),
-          position: LatLng(office.lat, office.lng),
-          infoWindow: InfoWindow(
-            title: office.name,
-            snippet: office.address,
-          ),
-        );
-        _markers[office.name] = marker;
-      }
     });
   }
 
@@ -59,8 +47,10 @@ class _MyAppState extends State<MyApp> {
               padding: const EdgeInsets.all(16.0),
               child: TextField(
                 decoration: InputDecoration(
-                  hintText: 'Search',
-                  border: OutlineInputBorder(),
+                  hintText: 'Locate',
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(25.0),
+                  ),
                 ),
               ),
             ),
@@ -72,9 +62,38 @@ class _MyAppState extends State<MyApp> {
                   zoom: 17, // Adjust zoom level as needed
                 ),
                 markers: _markers.values.toSet(),
+                mapType: MapType.satellite,
               ),
             ),
           ],
+        ),
+        drawer: Drawer(
+          child: Column(
+            children: [
+              const SizedBox(height: 50),
+              const Text(
+                'S Compass',
+                style: TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 10),
+              const Icon(Icons.explore),
+              const SizedBox(height: 20),
+              ElevatedButton(
+                onPressed: () {},
+                child: const Text('About'),
+              ),
+              ElevatedButton(
+                onPressed: () {},
+                child: const Text('Settings'),
+              ),
+              const Spacer(),
+              const Text('2023'),
+              const SizedBox(height: 10),
+            ],
+          ),
         ),
         bottomNavigationBar: BottomNavigationBar(
           currentIndex: _currentIndex,
