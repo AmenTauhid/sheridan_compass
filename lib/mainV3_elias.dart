@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:sheridan_compass/startTrip.dart';
 import 'src/locations.dart' as locations;
 
 void main() {
@@ -172,7 +173,10 @@ class _MyAppState extends State<MyApp> {
               child: ClipOval(
                 child: ElevatedButton(
                   onPressed: () {
-                    // Add your start trip logic here
+                    Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => StartTrip()),
+                    );
                   },
                   style: ElevatedButton.styleFrom(
                     padding: const EdgeInsets.all(0), // Remove padding
