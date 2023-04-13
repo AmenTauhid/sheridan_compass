@@ -16,6 +16,7 @@ class MyApp extends StatefulWidget {
 class _MyAppState extends State<MyApp> {
   final Map<String, Marker> _markers = {};
   int _currentIndex = 0;
+  late String _searchTerm;
 
   void _zoomIn() {
     final GoogleMapController? controller = _mapController;
@@ -46,6 +47,10 @@ class _MyAppState extends State<MyApp> {
     });
   }
 
+  void _performSearch(String value) {
+    // Perform the search here
+  }
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -59,7 +64,6 @@ class _MyAppState extends State<MyApp> {
               decoration: TextDecoration.underline,
             ),
           ),
-
           centerTitle: true,
           elevation: 2,
         ),
@@ -91,6 +95,50 @@ class _MyAppState extends State<MyApp> {
                     child: const Icon(Icons.remove),
                   ),
                 ],
+              ),
+            ),
+            Positioned(
+              top: 10,
+              left: 20,
+              right: 20,
+              child: Container(
+                height: 40,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(20),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.grey.withOpacity(0.5),
+                      spreadRadius: 1,
+                      blurRadius: 7,
+                      offset: const Offset(0, 3),
+                    ),
+                  ],
+                ),
+                child: Row(
+                  children: [
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: TextField(
+                        decoration: InputDecoration(
+                          hintText: 'Search Location',
+                          border: InputBorder.none,
+                        ),
+                        onChanged: (value) {
+                          setState(() {
+                            _searchTerm = value;
+                          });
+                        },
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.search),
+                      onPressed: () {
+                        _performSearch(_searchTerm);
+                      },
+                    ),
+                  ],
+                ),
               ),
             ),
           ],
