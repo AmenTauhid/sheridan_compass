@@ -7,7 +7,7 @@ void main() {
 }
 
 class MyApp extends StatefulWidget {
-  const MyApp({super.key});
+  const MyApp({Key? key});
 
   @override
   State<MyApp> createState() => _MyAppState();
@@ -15,6 +15,7 @@ class MyApp extends StatefulWidget {
 
 class _MyAppState extends State<MyApp> {
   final Map<String, Marker> _markers = {};
+
   Future<void> _onMapCreated(GoogleMapController controller) async {
     final googleOffices = await locations.getGoogleOffices();
     setState(() {
@@ -48,9 +49,15 @@ class _MyAppState extends State<MyApp> {
         body: GoogleMap(
           onMapCreated: _onMapCreated,
           initialCameraPosition: const CameraPosition(
-            target: LatLng(0, 0),
-            zoom: 2,
+            target: LatLng(43.46843248599148, -79.70040205206587), // Oakville Campus coordinates
+            zoom: 17, // Adjust zoom level as needed
           ),
+          mapType: MapType.satellite, // Set map type to satellite
+          tiltGesturesEnabled: true, // Enable tilt gestures
+          myLocationEnabled: true, // Enable my location
+          mapToolbarEnabled: true, // Enable map toolbar
+          buildingsEnabled: true, // Enable 3D buildings
+          indoorViewEnabled: true, // Enable indoor view
           markers: _markers.values.toSet(),
         ),
       ),
