@@ -34,16 +34,33 @@ class _MyAppState extends State<MyApp> {
     });
   }
 
+  int _selectedIndex = 0;
+  String _searchTerm = '';
+
+  void _onItemTapped(int index) {
+    setState(() {
+      _selectedIndex = index;
+    });
+  }
+
+  void _performSearch(String query) {
+    // Implement your search logic here
+    print('Searching for $query');
+    setState(() {
+      _searchTerm = query;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       theme: ThemeData(
-        useMaterial3: true,
-        colorSchemeSeed: Colors.green[700],
+        colorSchemeSeed: Colors.blue,
       ),
       home: Scaffold(
         appBar: AppBar(
-          title: const Text('Google Office Locations'),
+          title: const Text('Sheridan Compass 🧭'),
+          centerTitle: true,
           elevation: 2,
         ),
         body: GoogleMap(
