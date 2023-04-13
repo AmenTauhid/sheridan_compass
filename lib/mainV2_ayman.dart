@@ -863,25 +863,37 @@ class CampusMapPage extends StatefulWidget {
 class _CampusMapPageState extends State<CampusMapPage> {
   final Set<Marker> _markers = {};
   final Set<Polyline> _polylines = {};
-  final LatLng _sBuilding = LatLng(43.468963, -79.699594);
-  String? _selectedBuilding; // Change this line
+  final LatLng _sBuilding = const LatLng(43.468963, -79.699594);
+  String? _selectedBuilding;
   final List<LatLng> _polylineCoordinates = [];
   final PolylinePoints _polylinePoints = PolylinePoints();
 
-  @override
-  void initState() {
-    super.initState();
-    _markers.add(Marker(
-      markerId: const MarkerId("S_building"),
-      position: _sBuilding,
-      infoWindow: const InfoWindow(title: "S Building"),
-    ));
-    _markers.add(const Marker(
-      markerId: MarkerId("B_building"),
-      position: LatLng(43.469596, -79.698068),
-      infoWindow: InfoWindow(title: "B Building"),
-    ));
+  void _updateMarkers(String destinationBuildingId) {
+    LatLng? destination; // Declare destination as nullable
+    switch (destinationBuildingId) {
+      case 'B_building':
+        destination = const LatLng(43.469596, -79.698068);
+        break;
+    // Add more buildings with their respective coordinates here
+    }
+
+    setState(() {
+      _markers.clear();
+      _markers.add(Marker(
+        markerId: const MarkerId("S_building"),
+        position: _sBuilding,
+        infoWindow: const InfoWindow(title: "S Building"),
+      ));
+      if (destination != null) { // Check if destination is not null before adding the marker
+        _markers.add(Marker(
+          markerId: MarkerId(destinationBuildingId),
+          position: destination,
+          infoWindow: const InfoWindow(title: "Destination Building"),
+        ));
+      }
+    });
   }
+
 
   Widget _buildDropdown() {
     return DropdownButton<String>(
@@ -899,6 +911,7 @@ class _CampusMapPageState extends State<CampusMapPage> {
           setState(() {
             _selectedBuilding = newValue;
           });
+          _updateMarkers(newValue);
           _drawRoute(newValue);
         }
       },
@@ -952,23 +965,35 @@ class _CampusMapPageState extends State<CampusMapPage> {
     }
   }
 
+  bool _isSatelliteView = false;
+
+  Widget _buildMapStyleButton() {
+    return ElevatedButton(
+      onPressed: () {
+        setState(() {
+          _isSatelliteView = !_isSatelliteView;
+        });
+      },
+      child: Text(_isSatelliteView ? 'Normal View' : 'Satellite View'),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       home: Scaffold(
         appBar: AppBar(
-          title: Text('Sheridan College Oakville Campus Navigation'),
+          title: const Text('Sheridan College Oakville Campus Navigation'),
         ),
         body: Column(
           children: [
             _buildDropdown(),
+            _buildMapStyleButton(),
             Expanded(
               child: GoogleMap(
-                initialCameraPosition: CameraPosition(
-                    target: _sBuilding, zoom: 17),
+                initialCameraPosition: CameraPosition(target: _sBuilding, zoom: 17, tilt: 45.0),
+                mapType: _isSatelliteView ? MapType.satellite : MapType.normal,
                 markers: _markers,
-                mapType: MapType.satellite,
                 polylines: _polylines,
                 onMapCreated: (GoogleMapController controller) {},
               ),
@@ -979,4 +1004,3 @@ class _CampusMapPageState extends State<CampusMapPage> {
     );
   }
 }
-
