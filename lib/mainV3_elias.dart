@@ -15,6 +15,7 @@ class MyApp extends StatefulWidget {
 
 class _MyAppState extends State<MyApp> {
   final Map<String, Marker> _markers = {};
+  int _currentIndex = 0;
 
   Future<void> _onMapCreated(GoogleMapController controller) async {
     final googleOffices = await locations.getGoogleOffices();
@@ -34,20 +35,9 @@ class _MyAppState extends State<MyApp> {
     });
   }
 
-  int _selectedIndex = 0;
-  String _searchTerm = '';
-
-  void _onItemTapped(int index) {
+  void _onTabTapped(int index) {
     setState(() {
-      _selectedIndex = index;
-    });
-  }
-
-  void _performSearch(String query) {
-    // Implement your search logic here
-    print('Searching for $query');
-    setState(() {
-      _searchTerm = query;
+      _currentIndex = index;
     });
   }
 
@@ -63,13 +53,46 @@ class _MyAppState extends State<MyApp> {
           centerTitle: true,
           elevation: 2,
         ),
-        body: GoogleMap(
-          onMapCreated: _onMapCreated,
-          initialCameraPosition: const CameraPosition(
-            target: LatLng(43.46843248599148, -79.70040205206587), // Oakville Campus coordinates
-            zoom: 17, // Adjust zoom level as needed
-          ),
-          markers: _markers.values.toSet(),
+        body: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: TextField(
+                decoration: InputDecoration(
+                  hintText: 'Search',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+            ),
+            Expanded(
+              child: GoogleMap(
+                onMapCreated: _onMapCreated,
+                initialCameraPosition: const CameraPosition(
+                  target: LatLng(43.46843248599148, -79.70040205206587), // Oakville Campus coordinates
+                  zoom: 17, // Adjust zoom level as needed
+                ),
+                markers: _markers.values.toSet(),
+              ),
+            ),
+          ],
+        ),
+        bottomNavigationBar: BottomNavigationBar(
+          currentIndex: _currentIndex,
+          onTap: _onTabTapped,
+          items: const [
+            BottomNavigationBarItem(
+              icon: Icon(Icons.explore),
+              label: 'Explore',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.bookmark),
+              label: 'Saved Locations',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.settings),
+              label: 'Settings',
+            ),
+          ],
         ),
       ),
     );
