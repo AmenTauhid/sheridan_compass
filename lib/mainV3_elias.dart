@@ -1,22 +1,55 @@
+import 'dart:async';
+import 'dart:math' as math;
+import 'dart:math';
+
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
-import 'src/locations.dart' as locations;
+import 'package:flutter_polyline_points/flutter_polyline_points.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:location/location.dart';
 
 void main() {
-  runApp(const MyApp());
+  runApp(const CampusMapPage());
 }
 
-class MyApp extends StatefulWidget {
-  const MyApp({Key? key}) : super(key: key);
+class CampusMapPage extends StatefulWidget {
+  const CampusMapPage({super.key});
 
   @override
-  State<MyApp> createState() => _MyAppState();
+  _CampusMapPageState createState() => _CampusMapPageState();
 }
 
-class _MyAppState extends State<MyApp> {
-  final Map<String, Marker> _markers = {};
-  int _currentIndex = 0;
+
+class _CampusMapPageState extends State<CampusMapPage> {
+  final Set<Marker> _markers = {};
+  final Set<Polyline> _polylines = {};
+  final LatLng _sBuilding = const LatLng(43.468963, -79.699594);
   String? _selectedBuilding;
+  final List<LatLng> _polylineCoordinates = [];
+  final PolylinePoints _polylinePoints = PolylinePoints();
+  final Location _location = Location();
+  late StreamSubscription<LocationData> _locationSubscription;
+  LatLng? _userLocation;
+  double? _currentBearing;
+  double _remainingDistance = 0;
+  int _currentIndex = 1;
+  String? _selectedStartingPoint;
+
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+
+  void _openLeftDrawer() {
+    _scaffoldKey.currentState!.openDrawer();
+  }
+
+  void _openRightDrawer() {
+    _scaffoldKey.currentState!.openEndDrawer();
+  }
+
+  @override
+  void initState() {
+    super.initState();
+  }
 
   void _zoomIn() {
     final GoogleMapController? controller = _mapController;
@@ -40,13 +73,75 @@ class _MyAppState extends State<MyApp> {
     });
     _mapController = controller;
   }
+  // Prepare the arrow marker icon
+  BitmapDescriptor? _arrowIcon;
+  Future<void> _createArrowIcon() async {
+    _arrowIcon = await BitmapDescriptor.fromAssetImage(const ImageConfiguration(), 'assets/arrow.png');
+  }
 
-  void _onTabTapped(int index) {
-    setState(() {
-      _currentIndex = index;
+  void _initLocation() async {
+    bool serviceEnabled;
+    PermissionStatus permissionGranted;
+
+    serviceEnabled = await _location.serviceEnabled();
+    if (!serviceEnabled) {
+      serviceEnabled = await _location.requestService();
+      if (!serviceEnabled) {
+        return;
+      }
+    }
+
+    permissionGranted = await _location.hasPermission();
+    if (permissionGranted == PermissionStatus.denied) {
+      permissionGranted = await _location.requestPermission();
+      if (permissionGranted != PermissionStatus.granted) {
+        return;
+      }
+    }
+
+    _locationSubscription = _location.onLocationChanged.listen((LocationData currentLocation) {
+      _updateUserLocation(currentLocation);
+      if (_selectedBuilding != null) {
+        _drawRoute(_userLocation!, _selectedBuilding!);
+      }
     });
   }
 
+  void _updateMarkers(String destinationBuildingId) {
+    LatLng? destination; // Declare destination as nullable
+    switch (destinationBuildingId) {
+      case 'B_building':
+        destination = const LatLng(43.468240, -79.700551);
+        break;
+      case 'J_building':
+        destination = const LatLng(43.469594, -79.698922);
+        break;
+      case 'C_building':
+        destination = const LatLng(43.46835, -79.69906);
+        break;
+      case 'E_building':
+        destination = const LatLng(43.468275, -79.699808);
+        break;
+    // Add more buildings with their respective coordinates here
+    }
+
+    setState(() {
+      _markers.clear();
+      // _markers.add(Marker(
+      //   markerId: const MarkerId("S_building"),
+      //   position: _sBuilding,
+      //   infoWindow: const InfoWindow(title: "S Building"),
+      // ));
+      if (destination != null)
+      { // Check if destination is not null before adding the marker
+        _markers.add(Marker(
+          markerId: MarkerId(destinationBuildingId),
+          position: destination,
+          infoWindow: const InfoWindow(title: "Destination Building"),
+        ));
+      }
+    });
+  }
   Widget _buildDropdown() {
     return LayoutBuilder(
       builder: (BuildContext context, BoxConstraints constraints) {
@@ -71,16 +166,20 @@ class _MyAppState extends State<MyApp> {
             value: _selectedBuilding,
             items: const [
               DropdownMenuItem<String>(
-                value: 'A_building',
-                child: Text('  A Wing'),
-              ),
-              DropdownMenuItem<String>(
                 value: 'B_building',
-                child: Text('  B Wing'),
+                child: Text('B Building'),
               ),
               DropdownMenuItem<String>(
                 value: 'C_building',
-                child: Text('  C Wing'),
+                child: Text('C Building'),
+              ),
+              DropdownMenuItem<String>(
+                value: 'E_building',
+                child: Text('E Building'),
+              ),
+              DropdownMenuItem<String>(
+                value: 'J_building',
+                child: Text('J Building'),
               ),
             ],
             onChanged: (String? newValue) {
@@ -96,13 +195,225 @@ class _MyAppState extends State<MyApp> {
     );
   }
 
+  Widget _buildStartingPointDropdown() {
+    return LayoutBuilder(
+      builder: (BuildContext context, BoxConstraints constraints) {
+        return Container(
+          width: constraints.maxWidth,
+          height: 40,
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(20),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.grey.withOpacity(0.5),
+                spreadRadius: 1,
+                blurRadius: 7,
+                offset: const Offset(0, 3),
+              ),
+            ],
+          ),
+          child: DropdownButton<String>(
+            isExpanded: true,
+            hint: const Text('  Select Starting Point'),
+            value: _selectedStartingPoint,
+            items: const [
+              DropdownMenuItem<String>(
+                value: 'current_location',
+                child: Text('Current Location'),
+              ),
+              DropdownMenuItem<String>(
+                value: 'B_building',
+                child: Text('B Building'),
+              ),
+              DropdownMenuItem<String>(
+                value: 'C_building',
+                child: Text('C Building'),
+              ),
+              DropdownMenuItem<String>(
+                value: 'E_building',
+                child: Text('E Building'),
+              ),
+              DropdownMenuItem<String>(
+                value: 'J_building',
+                child: Text('J Building'),
+              ),
+            ],
+            onChanged: (String? newValue) {
+              if (newValue != null) {
+                setState(() {
+                  _selectedStartingPoint = newValue;
+                });
+              }
+            },
+          ),
+        );
+      },
+    );
+  }
+
+  LatLng _getBuildingCoordinates(String buildingId) {
+    switch (buildingId) {
+      case 'B_building':
+        return const LatLng(43.468240, -79.700551);
+      case 'C_building':
+        return const LatLng(43.46835, -79.69906);
+      case 'E_building':
+        return const LatLng(43.468275, -79.699808);
+      case 'J_building':
+        return const LatLng(43.469594, -79.698922);
+      default:
+        throw Exception('Invalid building ID');
+    }
+  }
+
+  Future<void> _drawRoute(LatLng userLocation, String destinationBuildingId) async {
+    LatLng? destination;
+    switch (destinationBuildingId) {
+      case 'B_building':
+        destination = const LatLng(43.468240, -79.700551);
+        break;
+      case 'C_building':
+        destination = const LatLng(43.46835, -79.69906);
+        break;
+      case 'E_building':
+        destination = const LatLng(43.468275, -79.699808);
+        break;
+      case 'J_building':
+        destination = const LatLng(43.469594, -79.698922);
+        break;
+    // Add more buildings with their respective coordinates here
+    }
+
+    if (destination != null) {
+      LatLng startingPoint = _selectedStartingPoint == 'current_location' ? userLocation : _getBuildingCoordinates(_selectedStartingPoint!);
+      PolylineResult result = await _polylinePoints.getRouteBetweenCoordinates(
+        // Add your Google Maps API key
+        "AIzaSyBPB8AgsQbjJoS_-kIWlPbdI33wToci6aY",
+        PointLatLng(startingPoint.latitude, startingPoint.longitude),
+        PointLatLng(destination.latitude, destination.longitude),
+        travelMode: TravelMode.walking,
+      );
+
+      if (result.points.isNotEmpty) {
+        _polylineCoordinates.clear();
+        setState(() {
+          for (var point in result.points) {
+            _polylineCoordinates.add(LatLng(point.latitude, point.longitude));
+          }
+        });
+
+        setState(() {
+          Polyline polyline = Polyline(
+            polylineId: const PolylineId("route"),
+            color: Colors.red,
+            points: _polylineCoordinates,
+            width: 3,
+          );
+          _polylines.add(polyline);
+        });
+
+        // Update remaining distance
+        _remainingDistance = 0;
+        for (int i = 0; i < _polylineCoordinates.length - 1; i++) {
+          _remainingDistance += _distanceBetweenPoints(
+            _polylineCoordinates[i],
+            _polylineCoordinates[i + 1],
+          );
+        }
+        if (kDebugMode) {
+          print("Remaining distance: $_remainingDistance meters");
+        }
+      } else {
+        if (kDebugMode) {
+          print("Error: No points received.");
+        }
+      }
+    } else {
+      if (kDebugMode) {
+        print("Error: Destination not found.");
+      }
+    }
+  }
+
+  double _distanceBetweenPoints(LatLng point1, LatLng point2) {
+    const double earthRadius = 6371000; // Earth's radius in meters
+    double lat1 = _degreeToRadian(point1.latitude);
+    double lat2 = _degreeToRadian(point2.latitude);
+    double dLat = _degreeToRadian(point2.latitude - point1.latitude);
+    double dLng = _degreeToRadian(point2.longitude - point1.longitude);
+
+    double a = sin(dLat / 2) * sin(dLat / 2) +
+        cos(lat1) * cos(lat2) * sin(dLng / 2) * sin(dLng / 2);
+    double c = 2 * atan2(sqrt(a), sqrt(1 - a));
+
+    return earthRadius * c;
+  }
+
+  double _degreeToRadian(double degree) {
+    return degree * pi / 180;
+  }
+
+  bool _isSatelliteView = false;
+  Widget _buildMapStyleButton() {
+    return ElevatedButton(
+        style: ElevatedButton.styleFrom(
+          backgroundColor: const Color(0xFF1C355E),
+        ),
+        onPressed: () {
+          setState(() {
+            _isSatelliteView = !_isSatelliteView;
+          });
+          // Your existing onPressed code...
+        },
+        child: Text(_isSatelliteView ? 'Normal View' : 'Satellite View')
+    );
+  }
+
+  @override
+  void dispose() {
+    _locationSubscription.cancel();
+    super.dispose();
+  }
+
+  void _updateUserLocation(LocationData currentLocation) {
+    setState(() {
+      // Remove the existing user_location marker before adding a new one
+      _markers.removeWhere((marker) => marker.markerId == const MarkerId("user_location"));
+      _markers.add(Marker(
+        markerId: const MarkerId("user_location"),
+        position: LatLng(currentLocation.latitude!, currentLocation.longitude!),
+        // icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueAzure),\
+        rotation: currentLocation.heading!,
+      ));
+      _userLocation = LatLng(currentLocation.latitude!, currentLocation.longitude!);
+
+      if (_selectedBuilding != null) {
+        _drawRoute(_userLocation!, _selectedBuilding!);
+      }
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSwatch(
-          primarySwatch: Colors.blue,
-          primaryColorDark: Colors.blue[900],
+        appBarTheme: AppBarTheme(
+          backgroundColor: const Color(0xFF1C355E),
+          toolbarTextStyle: TextTheme(
+            titleLarge: GoogleFonts.sourceSansPro(
+              fontSize: 20.0,
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
+            ),
+          ).bodyMedium,
+          titleTextStyle: TextTheme(
+            titleLarge: GoogleFonts.sourceSansPro(
+              fontSize: 20.0,
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
+            ),
+          ).titleLarge,
         ),
       ),
       home: Scaffold(
@@ -114,17 +425,37 @@ class _MyAppState extends State<MyApp> {
         body: Stack(
           children: [
             GoogleMap(
+              initialCameraPosition: CameraPosition(target: _sBuilding, zoom: 17, tilt: 45.0),
+              mapType: _isSatelliteView ? MapType.satellite : MapType.normal,
+              markers: _markers,
+              polylines: _polylines,
+              compassEnabled: false,
+              zoomControlsEnabled: false,
               onMapCreated: _onMapCreated,
-              initialCameraPosition: const CameraPosition(
-                target: LatLng(43.46843248599148, -79.70040205206587), // Oakville Campus coordinates
-                zoom: 17, // Adjust zoom level as needed
-              ),
-              markers: _markers.values.toSet(),
-              mapType: MapType.satellite,
-              zoomControlsEnabled: false, // Disable default zoom controls
             ),
             Positioned(
               top: 10,
+              left: 20,
+              right: 20,
+              child: Container(
+                height: 40,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(20),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.grey.withOpacity(0.5),
+                      spreadRadius: 1,
+                      blurRadius: 7,
+                      offset: const Offset(0, 3),
+                    ),
+                  ],
+                ),
+                child: _buildStartingPointDropdown(),
+              ),
+            ),
+            Positioned(
+              top: 60,
               left: 20,
               right: 20,
               child: Container(
@@ -162,34 +493,11 @@ class _MyAppState extends State<MyApp> {
                 ],
               ),
             ),
-            Positioned(
-              right: 16, // Adjust position as needed
-              bottom: 16, // Adjust position as needed
-              child: ClipOval(
-                child: ElevatedButton(
-                  onPressed: () {
-                  },
-                  style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.all(0), // Remove padding
-                    minimumSize: const Size(100, 100), // Set minimum size
-                    shape: const CircleBorder(),
-                    primary: Colors.green,// Set circular shape
-                  ),
-                  child: const Text(
-                    'Start Trip',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold, // Set font weight to bold
-                      color: Colors.white, // Set font color to white
-                    ),
-                  ),
-                ),
-              ),
-            ),
           ],
         ),
         drawer: Drawer(
           child: Container(
+            padding: EdgeInsets.zero,
             color: Colors.white,
             child: Column(
               children: [
@@ -226,20 +534,50 @@ class _MyAppState extends State<MyApp> {
             ),
           ),
         ),
+        endDrawer: Drawer(
+          child: Container(
+            padding: EdgeInsets.zero,
+            color: Colors.white,
+            child: Column(
+              children: const [
+                SizedBox(height: 90),
+                Text(
+                  'History',
+                  style: TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                    decoration: TextDecoration.underline,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
         bottomNavigationBar: BottomNavigationBar(
           currentIndex: _currentIndex,
-          onTap: _onTabTapped,
-          items: const [
+          items: [
             BottomNavigationBarItem(
+              icon: GestureDetector(
+                // When the "Information" button is tapped, open the left drawer
+                onTap: () {
+                  _openLeftDrawer();
+                },
+                child: Icon(Icons.info),
+              ),
+              label: 'Information',
+            ),
+            const BottomNavigationBarItem(
               icon: Icon(Icons.explore),
               label: 'Explore',
             ),
             BottomNavigationBarItem(
-              icon: Icon(Icons.save),
-              label: 'Saved Trips',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.history),
+              icon: GestureDetector(
+                // When the "History" button is tapped, open the right drawer
+                onTap: () {
+                  _openRightDrawer();
+                },
+                child: Icon(Icons.history),
+              ),
               label: 'History',
             ),
           ],
@@ -248,4 +586,3 @@ class _MyAppState extends State<MyApp> {
     );
   }
 }
-

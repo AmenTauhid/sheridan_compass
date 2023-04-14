@@ -33,8 +33,23 @@ class CampusMapPage extends StatefulWidget {
   LatLng? _userLocation;
   double? _currentBearing;
   double _remainingDistance = 0;
-  int _currentIndex = 0;
+  int _currentIndex = 1;
   String? _selectedStartingPoint;
+
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+
+  void _openLeftDrawer() {
+    _scaffoldKey.currentState!.openDrawer();
+  }
+
+  void _openRightDrawer() {
+    _scaffoldKey.currentState!.openEndDrawer();
+  }
+
+  @override
+  void initState() {
+    super.initState();
+  }
 
   void _zoomIn() {
     final GoogleMapController? controller = _mapController;
@@ -58,13 +73,6 @@ class CampusMapPage extends StatefulWidget {
     });
     _mapController = controller;
   }
-
-  void _onTabTapped(int index) {
-    setState(() {
-      _currentIndex = index;
-    });
-  }
-
   // Prepare the arrow marker icon
   BitmapDescriptor? _arrowIcon;
   Future<void> _createArrowIcon() async {
@@ -363,12 +371,6 @@ class CampusMapPage extends StatefulWidget {
   }
 
   @override
-  void initState() {
-    super.initState();
-    _initLocation();
-  }
-
-  @override
   void dispose() {
     _locationSubscription.cancel();
     super.dispose();
@@ -495,6 +497,7 @@ class CampusMapPage extends StatefulWidget {
         ),
         drawer: Drawer(
           child: Container(
+            padding: EdgeInsets.zero,
             color: Colors.white,
             child: Column(
               children: [
@@ -531,20 +534,50 @@ class CampusMapPage extends StatefulWidget {
             ),
           ),
         ),
+        endDrawer: Drawer(
+          child: Container(
+            padding: EdgeInsets.zero,
+            color: Colors.white,
+            child: Column(
+              children: const [
+                SizedBox(height: 90),
+                Text(
+                  'History',
+                  style: TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                    decoration: TextDecoration.underline,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
         bottomNavigationBar: BottomNavigationBar(
           currentIndex: _currentIndex,
-          onTap: _onTabTapped,
-          items: const [
+          items: [
             BottomNavigationBarItem(
+              icon: GestureDetector(
+                // When the "Information" button is tapped, open the left drawer
+                onTap: () {
+                  _openLeftDrawer();
+                },
+                child: Icon(Icons.info),
+              ),
+              label: 'Information',
+            ),
+            const BottomNavigationBarItem(
               icon: Icon(Icons.explore),
               label: 'Explore',
             ),
             BottomNavigationBarItem(
-              icon: Icon(Icons.save),
-              label: 'Saved Trips',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.history),
+              icon: GestureDetector(
+                // When the "History" button is tapped, open the right drawer
+                onTap: () {
+                  _openRightDrawer();
+                },
+                child: Icon(Icons.history),
+              ),
               label: 'History',
             ),
           ],
