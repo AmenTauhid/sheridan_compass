@@ -1,4 +1,6 @@
 import 'dart:async';
+import 'dart:math' as math;
+import 'dart:math';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -28,6 +30,14 @@ class _CampusMapPageState extends State<CampusMapPage> {
   final Location _location = Location();
   late StreamSubscription<LocationData> _locationSubscription;
   LatLng? _userLocation;
+  double? _currentBearing;
+  double _remainingDistance = 0;
+
+  // Prepare the arrow marker icon
+  BitmapDescriptor? _arrowIcon;
+  Future<void> _createArrowIcon() async {
+    _arrowIcon = await BitmapDescriptor.fromAssetImage(const ImageConfiguration(), 'assets/arrow.png');
+  }
 
   void _initLocation() async {
     bool serviceEnabled;
@@ -51,7 +61,9 @@ class _CampusMapPageState extends State<CampusMapPage> {
 
     _locationSubscription = _location.onLocationChanged.listen((LocationData currentLocation) {
       _updateUserLocation(currentLocation);
-      // Use the currentLocation to update the position of the user on the map and recalculate the route
+      if (_selectedBuilding != null) {
+        _drawRoute(_userLocation!, _selectedBuilding!);
+      }
     });
   }
 
@@ -70,7 +82,7 @@ class _CampusMapPageState extends State<CampusMapPage> {
       case 'E_building':
         destination = const LatLng(43.468275, -79.699808);
         break;
-        // Add more buildings with their respective coordinates here
+    // Add more buildings with their respective coordinates here
     }
 
     setState(() {
@@ -80,7 +92,8 @@ class _CampusMapPageState extends State<CampusMapPage> {
       //   position: _sBuilding,
       //   infoWindow: const InfoWindow(title: "S Building"),
       // ));
-      if (destination != null) { // Check if destination is not null before adding the marker
+      if (destination != null)
+      { // Check if destination is not null before adding the marker
         _markers.add(Marker(
           markerId: MarkerId(destinationBuildingId),
           position: destination,
@@ -183,9 +196,20 @@ class _CampusMapPageState extends State<CampusMapPage> {
           );
           _polylines.add(polyline);
         });
+
+        // Update remaining distance
+        _remainingDistance = 0;
+        for (int i = 0; i < _polylineCoordinates.length - 1; i++) {
+          _remainingDistance += _distanceBetweenPoints(
+            _polylineCoordinates[i],
+            _polylineCoordinates[i + 1],
+          );
+        }
+        print("Remaining distance: ${_remainingDistance} meters");
       } else {
         if (kDebugMode) {
-          print("Error: No points received.");
+          print
+            ("Error: No points received.");
         }
       }
     } else {
@@ -195,21 +219,37 @@ class _CampusMapPageState extends State<CampusMapPage> {
     }
   }
 
+  double _distanceBetweenPoints(LatLng point1, LatLng point2) {
+    const double earthRadius = 6371000; // Earth's radius in meters
+    double lat1 = _degreeToRadian(point1.latitude);
+    double lat2 = _degreeToRadian(point2.latitude);
+    double dLat = _degreeToRadian(point2.latitude - point1.latitude);
+    double dLng = _degreeToRadian(point2.longitude - point1.longitude);
 
-  final bool _isSatelliteView = false;
+    double a = sin(dLat / 2) * sin(dLat / 2) +
+        cos(lat1) * cos(lat2) * sin(dLng / 2) * sin(dLng / 2);
+    double c = 2 * atan2(sqrt(a), sqrt(1 - a));
 
+    return earthRadius * c;
+  }
+
+  double _degreeToRadian(double degree) {
+    return degree * pi / 180;
+  }
+
+  bool _isSatelliteView = false;
   Widget _buildMapStyleButton() {
     return ElevatedButton(
       style: ElevatedButton.styleFrom(
         backgroundColor: const Color(0xFF1C355E),
       ),
       onPressed: () {
+        setState(() {
+          _isSatelliteView = !_isSatelliteView;
+        });
         // Your existing onPressed code...
       },
-      child: Text(
-        _isSatelliteView ? 'Normal View' : 'Satellite View',
-        style: const TextStyle(color: Colors.white),
-      ),
+      child: Text(_isSatelliteView ? 'Normal View' : 'Satellite View')
     );
   }
 
@@ -232,9 +272,14 @@ class _CampusMapPageState extends State<CampusMapPage> {
       _markers.add(Marker(
         markerId: const MarkerId("user_location"),
         position: LatLng(currentLocation.latitude!, currentLocation.longitude!),
-        icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueAzure),
+        // icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueAzure),\
+        rotation: currentLocation.heading!,
       ));
       _userLocation = LatLng(currentLocation.latitude!, currentLocation.longitude!);
+
+      if (_selectedBuilding != null) {
+        _drawRoute(_userLocation!, _selectedBuilding!);
+      }
     });
   }
 
@@ -243,13 +288,15 @@ class _CampusMapPageState extends State<CampusMapPage> {
     return MaterialApp(
       theme: ThemeData(
         appBarTheme: AppBarTheme(
-          backgroundColor: const Color(0xFF1C355E), toolbarTextStyle: TextTheme(
+          backgroundColor: const Color(0xFF1C355E),
+          toolbarTextStyle: TextTheme(
             titleLarge: GoogleFonts.sourceSansPro(
               fontSize: 20.0,
               fontWeight: FontWeight.bold,
               color: Colors.white,
             ),
-          ).bodyMedium, titleTextStyle: TextTheme(
+          ).bodyMedium,
+          titleTextStyle: TextTheme(
             titleLarge: GoogleFonts.sourceSansPro(
               fontSize: 20.0,
               fontWeight: FontWeight.bold,
@@ -291,3 +338,5 @@ class _CampusMapPageState extends State<CampusMapPage> {
     );
   }
 }
+
+
