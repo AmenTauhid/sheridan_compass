@@ -475,28 +475,30 @@ class _CampusMapPageState extends State<CampusMapPage> {
 
 // Create a new function to fetch the travel history from Firebase
   Future<List<Map<String, dynamic>>> _fetchTravelHistory() async {
-    QuerySnapshot querySnapshot = await FirebaseFirestore.instance.collection(
-        'travel_history').get();
-    return querySnapshot.docs.map((doc) => doc.data() as Map<String, dynamic>)
-        .toList();
+    QuerySnapshot<Map<String, dynamic>> querySnapshot = await FirebaseFirestore.instance
+        .collection('travel_history')
+        .orderBy('timestamp', descending: true)
+        .get();
+
+    List<Map<String, dynamic>> travelHistory = [];
+    for (var doc in querySnapshot.docs) {
+      travelHistory.add(doc.data());
+    }
+    return travelHistory;
   }
 
 // Create a new function to build the history list
   Widget _buildHistoryList() {
     return FutureBuilder<List<Map<String, dynamic>>>(
       future: _fetchTravelHistory(),
-      builder: (BuildContext context,
-          AsyncSnapshot<List<Map<String, dynamic>>> snapshot) {
+      builder: (BuildContext context, AsyncSnapshot<List<Map<String, dynamic>>> snapshot) {
         if (snapshot.hasData) {
           return ListView.builder(
             itemCount: snapshot.data!.length,
             itemBuilder: (BuildContext context, int index) {
               return ListTile(
-                title: Text("From: ${snapshot
-                    .data![index]['starting_point']} To: ${snapshot
-                    .data![index]['destination']}"),
-                subtitle: Text("Timestamp: ${snapshot.data![index]['timestamp']
-                    .toDate()}"),
+                title: Text("From: ${snapshot.data![index]['starting_point']} To: ${snapshot.data![index]['destination']}"),
+                subtitle: Text("Timestamp: ${snapshot.data![index]['timestamp'].toDate()}"),
               );
             },
           );
@@ -507,6 +509,23 @@ class _CampusMapPageState extends State<CampusMapPage> {
         }
       },
     );
+  }
+
+  Future<void> _storeHistory() async {
+    if (_selectedStartingPoint != null && _selectedBuilding != null) {
+      await FirebaseFirestore.instance.collection('travel_history').add({
+        'starting_point': _selectedStartingPoint,
+        'destination': _selectedBuilding,
+        'timestamp': Timestamp.now(),
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('History saved successfully!')),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please select a starting point and destination')),
+      );
+    }
   }
 
   @override
