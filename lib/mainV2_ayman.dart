@@ -11,6 +11,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:location/location.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
+import 'package:sheridan_compass/history_page.dart';
 
 void main() {
   runApp(const CampusMapPage());
@@ -381,7 +382,9 @@ class CampusMapPage extends StatefulWidget {
             _polylineCoordinates[i + 1],
           );
         }
-        print("Remaining distance: ${_remainingDistance} meters");
+        if (kDebugMode) {
+          print("Remaining distance: $_remainingDistance meters");
+        }
 
         // Add travel history to Firebase
         await FirebaseFirestore.instance.collection('travel_history').add({
@@ -401,6 +404,7 @@ class CampusMapPage extends StatefulWidget {
       }
     }
   }
+
 
   double _distanceBetweenPoints(LatLng point1, LatLng point2) {
     const double earthRadius = 6371000; // Earth's radius in meters
