@@ -52,6 +52,13 @@ class CampusMapPage extends StatefulWidget {
 
   GoogleMapController? _mapController;
 
+  Future<void> _onMapCreated(GoogleMapController controller) async {
+    setState(() {
+      _markers.clear();
+    });
+    _mapController = controller;
+  }
+
   void _onTabTapped(int index) {
     setState(() {
       _currentIndex = index;
@@ -420,7 +427,9 @@ class CampusMapPage extends StatefulWidget {
               mapType: _isSatelliteView ? MapType.satellite : MapType.normal,
               markers: _markers,
               polylines: _polylines,
-              onMapCreated: (GoogleMapController controller) {},
+              compassEnabled: false,
+              zoomControlsEnabled: false,
+              onMapCreated: _onMapCreated,
             ),
             Positioned(
               top: 10,
