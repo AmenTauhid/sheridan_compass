@@ -12,7 +12,9 @@ import 'package:location/location.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
 
-void main() {
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp();
   runApp(const CampusMapPage());
 }
 
@@ -38,6 +40,8 @@ class _CampusMapPageState extends State<CampusMapPage> {
   double _remainingDistance = 0;
   int _currentIndex = 0;
   String? _selectedStartingPoint;
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+
 
   void _zoomIn() {
     final GoogleMapController? controller = _mapController;
@@ -465,6 +469,35 @@ class _CampusMapPageState extends State<CampusMapPage> {
       }
     });
   }
+// Create a new function to fetch the travel history from Firebase
+  Future<List<Map<String, dynamic>>> _fetchTravelHistory() async {
+    QuerySnapshot querySnapshot = await FirebaseFirestore.instance.collection('travel_history').get();
+    return querySnapshot.docs.map((doc) => doc.data() as Map<String, dynamic>).toList();
+  }
+
+// Create a new function to build the history list
+  Widget _buildHistoryList() {
+    return FutureBuilder<List<Map<String, dynamic>>>(
+      future: _fetchTravelHistory(),
+      builder: (BuildContext context, AsyncSnapshot<List<Map<String, dynamic>>> snapshot) {
+        if (snapshot.hasData) {
+          return ListView.builder(
+            itemCount: snapshot.data!.length,
+            itemBuilder: (BuildContext context, int index) {
+              return ListTile(
+                title: Text("From: ${snapshot.data![index]['starting_point']} To: ${snapshot.data![index]['destination']}"),
+                subtitle: Text("Timestamp: ${snapshot.data![index]['timestamp'].toDate()}"),
+              );
+            },
+          );
+        } else if (snapshot.hasError) {
+          return Center(child: Text("Error: ${snapshot.error}"));
+        } else {
+          return Center(child: CircularProgressIndicator());
+        }
+      },
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -489,10 +522,44 @@ class _CampusMapPageState extends State<CampusMapPage> {
         ),
       ),
       home: Scaffold(
+        key: _scaffoldKey,
         appBar: AppBar(
           title: const Text('Sheridan Compass'),
           centerTitle: true,
           elevation: 2,
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.history),
+              onPressed: () {
+                _scaffoldKey.currentState!.openEndDrawer(); // Open the end drawer when the history button is pressed
+              },
+            ),
+          ],
+        ),
+        endDrawer: Drawer(
+          child: Column(
+            children: [
+              const SizedBox(height: 95),
+              const Text(
+                '🧭',
+                style: TextStyle(
+                  fontSize: 100,
+                ),
+              ),
+              const SizedBox(height: 40),
+              const Text(
+                'History',
+                style: TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                  decoration: TextDecoration.underline,
+                ),
+              ),
+              Expanded(
+                child: _buildHistoryList(),
+              ),
+            ],
+          ),
         ),
         body: Stack(
           children: [
