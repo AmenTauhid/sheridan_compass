@@ -20,7 +20,8 @@ class CampusMapPage extends StatefulWidget {
   _CampusMapPageState createState() => _CampusMapPageState();
 }
 
-class _CampusMapPageState extends State<CampusMapPage> {
+
+  class _CampusMapPageState extends State<CampusMapPage> {
   final Set<Marker> _markers = {};
   final Set<Polyline> _polylines = {};
   final LatLng _sBuilding = const LatLng(43.468963, -79.699594);
@@ -33,6 +34,7 @@ class _CampusMapPageState extends State<CampusMapPage> {
   double? _currentBearing;
   double _remainingDistance = 0;
   int _currentIndex = 0;
+  String? _selectedStartingPoint;
 
   void _zoomIn() {
     final GoogleMapController? controller = _mapController;
@@ -178,7 +180,7 @@ class _CampusMapPageState extends State<CampusMapPage> {
     );
   }
 
-  Widget _buildDropdown2() {
+  Widget _buildStartingPointDropdown() {
     return LayoutBuilder(
       builder: (BuildContext context, BoxConstraints constraints) {
         return Container(
@@ -198,9 +200,13 @@ class _CampusMapPageState extends State<CampusMapPage> {
           ),
           child: DropdownButton<String>(
             isExpanded: true,
-            hint: const Text('  Select Start'),
-            value: _selectedBuilding,
+            hint: const Text('  Select Starting Point'),
+            value: _selectedStartingPoint,
             items: const [
+              DropdownMenuItem<String>(
+                value: 'current_location',
+                child: Text('Current Location'),
+              ),
               DropdownMenuItem<String>(
                 value: 'B_building',
                 child: Text('B Building'),
@@ -221,7 +227,7 @@ class _CampusMapPageState extends State<CampusMapPage> {
             onChanged: (String? newValue) {
               if (newValue != null) {
                 setState(() {
-                  _selectedBuilding = newValue;
+                  _selectedStartingPoint = newValue;
                 });
               }
             },
@@ -229,6 +235,21 @@ class _CampusMapPageState extends State<CampusMapPage> {
         );
       },
     );
+  }
+
+  LatLng _getBuildingCoordinates(String buildingId) {
+    switch (buildingId) {
+      case 'B_building':
+        return const LatLng(43.468240, -79.700551);
+      case 'C_building':
+        return const LatLng(43.46835, -79.69906);
+      case 'E_building':
+        return const LatLng(43.468275, -79.699808);
+      case 'J_building':
+        return const LatLng(43.469594, -79.698922);
+      default:
+        throw Exception('Invalid building ID');
+    }
   }
 
   Future<void> _drawRoute(LatLng userLocation, String destinationBuildingId) async {
@@ -250,10 +271,11 @@ class _CampusMapPageState extends State<CampusMapPage> {
     }
 
     if (destination != null) {
+      LatLng startingPoint = _selectedStartingPoint == 'current_location' ? userLocation : _getBuildingCoordinates(_selectedStartingPoint!);
       PolylineResult result = await _polylinePoints.getRouteBetweenCoordinates(
         // Add your Google Maps API key
         "AIzaSyBPB8AgsQbjJoS_-kIWlPbdI33wToci6aY",
-        PointLatLng(userLocation.latitude, userLocation.longitude),
+        PointLatLng(startingPoint.latitude, startingPoint.longitude),
         PointLatLng(destination.latitude, destination.longitude),
         travelMode: TravelMode.walking,
       );
@@ -284,11 +306,12 @@ class _CampusMapPageState extends State<CampusMapPage> {
             _polylineCoordinates[i + 1],
           );
         }
-        print("Remaining distance: ${_remainingDistance} meters");
+        if (kDebugMode) {
+          print("Remaining distance: $_remainingDistance meters");
+        }
       } else {
         if (kDebugMode) {
-          print
-            ("Error: No points received.");
+          print("Error: No points received.");
         }
       }
     } else {
@@ -417,7 +440,7 @@ class _CampusMapPageState extends State<CampusMapPage> {
                     ),
                   ],
                 ),
-                child: _buildDropdown2(),
+                child: _buildStartingPointDropdown(),
               ),
             ),
             Positioned(
