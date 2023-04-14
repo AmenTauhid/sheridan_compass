@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
-import 'package:sheridan_compass/startTrip.dart';
 import 'src/locations.dart' as locations;
 
 void main() {
@@ -48,10 +47,6 @@ class _MyAppState extends State<MyApp> {
     });
   }
 
-  void _performSearch(String value) {
-    // Perform the search here
-  }
-
   Widget _buildDropdown() {
     return LayoutBuilder(
       builder: (BuildContext context, BoxConstraints constraints) {
@@ -72,7 +67,7 @@ class _MyAppState extends State<MyApp> {
           ),
           child: DropdownButton<String>(
             isExpanded: true,
-            hint: const Text('  Select Location'),
+            hint: const Text('  Select Destination'),
             value: _selectedBuilding,
             items: const [
               DropdownMenuItem<String>(
@@ -173,10 +168,6 @@ class _MyAppState extends State<MyApp> {
               child: ClipOval(
                 child: ElevatedButton(
                   onPressed: () {
-                    Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (context) => StartTrip()),
-                    );
                   },
                   style: ElevatedButton.styleFrom(
                     padding: const EdgeInsets.all(0), // Remove padding
@@ -257,3 +248,4 @@ class _MyAppState extends State<MyApp> {
     );
   }
 }
+
