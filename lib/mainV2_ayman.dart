@@ -32,6 +32,29 @@ class _CampusMapPageState extends State<CampusMapPage> {
   LatLng? _userLocation;
   double? _currentBearing;
   double _remainingDistance = 0;
+  int _currentIndex = 0;
+
+  void _zoomIn() {
+    final GoogleMapController? controller = _mapController;
+    if (controller != null) {
+      controller.animateCamera(CameraUpdate.zoomIn());
+    }
+  }
+
+  void _zoomOut() {
+    final GoogleMapController? controller = _mapController;
+    if (controller != null) {
+      controller.animateCamera(CameraUpdate.zoomOut());
+    }
+  }
+
+  GoogleMapController? _mapController;
+
+  void _onTabTapped(int index) {
+    setState(() {
+      _currentIndex = index;
+    });
+  }
 
   // Prepare the arrow marker icon
   BitmapDescriptor? _arrowIcon;
@@ -102,53 +125,109 @@ class _CampusMapPageState extends State<CampusMapPage> {
       }
     });
   }
-
   Widget _buildDropdown() {
-    return Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16.0),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(8.0),
-          color: Colors.white,
-        ),
-        child: DropdownButton<String>(
-          underline: const SizedBox(), // Remove underline
-          isExpanded: true,
-          hint: const Text(
-            'Select Destination Building',
-            style: TextStyle(
-              color: Colors.grey,
-            ),
+    return LayoutBuilder(
+      builder: (BuildContext context, BoxConstraints constraints) {
+        return Container(
+          width: constraints.maxWidth,
+          height: 40,
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(20),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.grey.withOpacity(0.5),
+                spreadRadius: 1,
+                blurRadius: 7,
+                offset: const Offset(0, 3),
+              ),
+            ],
           ),
-          value: _selectedBuilding,
-          items: const [
-            DropdownMenuItem<String>(
-              value: 'B_building',
-              child: Text('B Building'),
-            ),
-            DropdownMenuItem<String>(
-              value: 'C_building',
-              child: Text('C Building'),
-            ),
-            DropdownMenuItem<String>(
-              value: 'E_building',
-              child: Text('E Building'),
-            ),
-            DropdownMenuItem<String>(
-              value: 'J_building',
-              child: Text('J Building'),
-            ),
-            // Add more buildings here
-          ],
-          onChanged: (String? newValue) {
-            if (newValue != null && _userLocation != null) {
-              setState(() {
-                _selectedBuilding = newValue;
-              });
-              _updateMarkers(newValue);
-              _drawRoute(_userLocation!, newValue);
-            }
-          },
-        )
+          child: DropdownButton<String>(
+            isExpanded: true,
+            hint: const Text('  Select Destination'),
+            value: _selectedBuilding,
+            items: const [
+              DropdownMenuItem<String>(
+                value: 'B_building',
+                child: Text('B Building'),
+              ),
+              DropdownMenuItem<String>(
+                value: 'C_building',
+                child: Text('C Building'),
+              ),
+              DropdownMenuItem<String>(
+                value: 'E_building',
+                child: Text('E Building'),
+              ),
+              DropdownMenuItem<String>(
+                value: 'J_building',
+                child: Text('J Building'),
+              ),
+            ],
+            onChanged: (String? newValue) {
+              if (newValue != null) {
+                setState(() {
+                  _selectedBuilding = newValue;
+                });
+              }
+            },
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildDropdown2() {
+    return LayoutBuilder(
+      builder: (BuildContext context, BoxConstraints constraints) {
+        return Container(
+          width: constraints.maxWidth,
+          height: 40,
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(20),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.grey.withOpacity(0.5),
+                spreadRadius: 1,
+                blurRadius: 7,
+                offset: const Offset(0, 3),
+              ),
+            ],
+          ),
+          child: DropdownButton<String>(
+            isExpanded: true,
+            hint: const Text('  Select Start'),
+            value: _selectedBuilding,
+            items: const [
+              DropdownMenuItem<String>(
+                value: 'B_building',
+                child: Text('B Building'),
+              ),
+              DropdownMenuItem<String>(
+                value: 'C_building',
+                child: Text('C Building'),
+              ),
+              DropdownMenuItem<String>(
+                value: 'E_building',
+                child: Text('E Building'),
+              ),
+              DropdownMenuItem<String>(
+                value: 'J_building',
+                child: Text('J Building'),
+              ),
+            ],
+            onChanged: (String? newValue) {
+              if (newValue != null) {
+                setState(() {
+                  _selectedBuilding = newValue;
+                });
+              }
+            },
+          ),
+        );
+      },
     );
   }
 
@@ -307,30 +386,134 @@ class _CampusMapPageState extends State<CampusMapPage> {
       ),
       home: Scaffold(
         appBar: AppBar(
-          title: const Text('Sheridan Compass 🧭'),
+          title: const Text('Sheridan Compass'),
           centerTitle: true,
+          elevation: 2,
         ),
-        body: Column(
+        body: Stack(
           children: [
-            const SizedBox(height: 16),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: _buildDropdown(),
+            GoogleMap(
+              initialCameraPosition: CameraPosition(target: _sBuilding, zoom: 17, tilt: 45.0),
+              mapType: _isSatelliteView ? MapType.satellite : MapType.normal,
+              markers: _markers,
+              polylines: _polylines,
+              onMapCreated: (GoogleMapController controller) {},
             ),
-            const SizedBox(height: 16),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: _buildMapStyleButton(),
-            ),
-            const SizedBox(height: 16),
-            Expanded(
-              child: GoogleMap(
-                initialCameraPosition: CameraPosition(target: _sBuilding, zoom: 17, tilt: 45.0),
-                mapType: _isSatelliteView ? MapType.satellite : MapType.normal,
-                markers: _markers,
-                polylines: _polylines,
-                onMapCreated: (GoogleMapController controller) {},
+            Positioned(
+              top: 10,
+              left: 20,
+              right: 20,
+              child: Container(
+                height: 40,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(20),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.grey.withOpacity(0.5),
+                      spreadRadius: 1,
+                      blurRadius: 7,
+                      offset: const Offset(0, 3),
+                    ),
+                  ],
+                ),
+                child: _buildDropdown2(),
               ),
+            ),
+            Positioned(
+              top: 60,
+              left: 20,
+              right: 20,
+              child: Container(
+                height: 40,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(20),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.grey.withOpacity(0.5),
+                      spreadRadius: 1,
+                      blurRadius: 7,
+                      offset: const Offset(0, 3),
+                    ),
+                  ],
+                ),
+                child: _buildDropdown(),
+              ),
+            ),
+            Positioned(
+              left: 16, // Adjust position as needed
+              bottom: 16, // Adjust position as needed
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  FloatingActionButton(
+                    onPressed: _zoomIn,
+                    child: const Icon(Icons.add),
+                  ),
+                  const SizedBox(height: 6),
+                  FloatingActionButton(
+                    onPressed: _zoomOut,
+                    child: const Icon(Icons.remove),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        drawer: Drawer(
+          child: Container(
+            color: Colors.white,
+            child: Column(
+              children: [
+                const SizedBox(height: 95),
+                const Text(
+                  '🧭',
+                  style: TextStyle(
+                    fontSize: 100,
+                  ),
+                ),
+                const SizedBox(height: 40),
+                const Text(
+                  'Sheridan Compass',
+                  style: TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                    decoration: TextDecoration.underline,
+                  ),
+                ),
+                const SizedBox(height: 20),
+                ElevatedButton(
+                  onPressed: () {},
+                  child: const Text('About'),
+                ),
+                ElevatedButton(
+                  onPressed: () {},
+                  child: const Text('Settings'),
+                ),
+                const Spacer(),
+                const Text('Ayman, Elias, & Omar'),
+                const Text('April, 2023'),
+                const SizedBox(height: 10),
+              ],
+            ),
+          ),
+        ),
+        bottomNavigationBar: BottomNavigationBar(
+          currentIndex: _currentIndex,
+          onTap: _onTabTapped,
+          items: const [
+            BottomNavigationBarItem(
+              icon: Icon(Icons.explore),
+              label: 'Explore',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.save),
+              label: 'Saved Trips',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.history),
+              label: 'History',
             ),
           ],
         ),
@@ -338,5 +521,3 @@ class _CampusMapPageState extends State<CampusMapPage> {
     );
   }
 }
-
-
