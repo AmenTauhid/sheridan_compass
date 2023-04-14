@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:sheridan_compass/startTrip.dart';
 import 'src/locations.dart' as locations;
 
 void main() {
@@ -16,7 +17,7 @@ class MyApp extends StatefulWidget {
 class _MyAppState extends State<MyApp> {
   final Map<String, Marker> _markers = {};
   int _currentIndex = 0;
-  late String _searchTerm;
+  String? _selectedBuilding;
 
   void _zoomIn() {
     final GoogleMapController? controller = _mapController;
@@ -51,19 +52,67 @@ class _MyAppState extends State<MyApp> {
     // Perform the search here
   }
 
+  Widget _buildDropdown() {
+    return LayoutBuilder(
+      builder: (BuildContext context, BoxConstraints constraints) {
+        return Container(
+          width: constraints.maxWidth,
+          height: 40,
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(20),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.grey.withOpacity(0.5),
+                spreadRadius: 1,
+                blurRadius: 7,
+                offset: const Offset(0, 3),
+              ),
+            ],
+          ),
+          child: DropdownButton<String>(
+            isExpanded: true,
+            hint: const Text('  Select Location'),
+            value: _selectedBuilding,
+            items: const [
+              DropdownMenuItem<String>(
+                value: 'A_building',
+                child: Text('  A Wing'),
+              ),
+              DropdownMenuItem<String>(
+                value: 'B_building',
+                child: Text('  B Wing'),
+              ),
+              DropdownMenuItem<String>(
+                value: 'C_building',
+                child: Text('  C Wing'),
+              ),
+            ],
+            onChanged: (String? newValue) {
+              if (newValue != null) {
+                setState(() {
+                  _selectedBuilding = newValue;
+                });
+              }
+            },
+          ),
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       theme: ThemeData(
-        colorSchemeSeed: Colors.blue,
+        colorScheme: ColorScheme.fromSwatch(
+          primarySwatch: Colors.blue,
+          primaryColorDark: Colors.blue[900],
+        ),
       ),
       home: Scaffold(
         appBar: AppBar(
-          title: const Text('Sheridan Compass',
-            style: TextStyle(
-              decoration: TextDecoration.underline,
-            ),
-          ),
+          title: const Text('Sheridan Compass'),
           centerTitle: true,
           elevation: 2,
         ),
@@ -78,6 +127,27 @@ class _MyAppState extends State<MyApp> {
               markers: _markers.values.toSet(),
               mapType: MapType.satellite,
               zoomControlsEnabled: false, // Disable default zoom controls
+            ),
+            Positioned(
+              top: 10,
+              left: 20,
+              right: 20,
+              child: Container(
+                height: 40,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(20),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.grey.withOpacity(0.5),
+                      spreadRadius: 1,
+                      blurRadius: 7,
+                      offset: const Offset(0, 3),
+                    ),
+                  ],
+                ),
+                child: _buildDropdown(),
+              ),
             ),
             Positioned(
               left: 16, // Adjust position as needed
@@ -98,46 +168,30 @@ class _MyAppState extends State<MyApp> {
               ),
             ),
             Positioned(
-              top: 10,
-              left: 20,
-              right: 20,
-              child: Container(
-                height: 40,
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(20),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.grey.withOpacity(0.5),
-                      spreadRadius: 1,
-                      blurRadius: 7,
-                      offset: const Offset(0, 3),
+              right: 16, // Adjust position as needed
+              bottom: 16, // Adjust position as needed
+              child: ClipOval(
+                child: ElevatedButton(
+                  onPressed: () {
+                    Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => StartTrip()),
+                    );
+                  },
+                  style: ElevatedButton.styleFrom(
+                    padding: const EdgeInsets.all(0), // Remove padding
+                    minimumSize: const Size(100, 100), // Set minimum size
+                    shape: const CircleBorder(),
+                    primary: Colors.green,// Set circular shape
+                  ),
+                  child: const Text(
+                    'Start Trip',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold, // Set font weight to bold
+                      color: Colors.white, // Set font color to white
                     ),
-                  ],
-                ),
-                child: Row(
-                  children: [
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: TextField(
-                        decoration: InputDecoration(
-                          hintText: 'Search Location',
-                          border: InputBorder.none,
-                        ),
-                        onChanged: (value) {
-                          setState(() {
-                            _searchTerm = value;
-                          });
-                        },
-                      ),
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.search),
-                      onPressed: () {
-                        _performSearch(_searchTerm);
-                      },
-                    ),
-                  ],
+                  ),
                 ),
               ),
             ),
