@@ -1,215 +1,231 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
-import 'package:geocoding/geocoding.dart' as geocoding;
-import 'package:http/http.dart' as http;
-import 'dart:convert';
+import 'package:flutter_polyline_points/flutter_polyline_points.dart';
 
 void main() {
-  runApp(const MyApp());
+  runApp(const CampusMapPage());
 }
 
-class MyApp extends StatefulWidget {
-  const MyApp({Key? key});
+class CampusMapPage extends StatefulWidget {
+  const CampusMapPage({super.key});
 
   @override
-  State<MyApp> createState() => _MyAppState();
+  _CampusMapPageState createState() => _CampusMapPageState();
 }
 
-class _MyAppState extends State<MyApp> {
-  final Map<String, Marker> _markers = {};
-  Set<Polyline> _polylines = {};
-  late GoogleMapController _mapController;
-  TextEditingController _searchController = TextEditingController();
+class _CampusMapPageState extends State<CampusMapPage> {
+  final Set<Marker> _markers = {};
+  final Set<Polyline> _polylines = {};
+  final LatLng _sBuilding = const LatLng(43.468963, -79.699594);
+  String? _selectedBuilding;
+  final List<LatLng> _polylineCoordinates = [];
+  final PolylinePoints _polylinePoints = PolylinePoints();
 
-  LatLng? _currentLocation;
-  LatLng? _destination;
+  void _updateMarkers(String destinationBuildingId) {
+    LatLng? destination; // Declare destination as nullable
+    switch (destinationBuildingId) {
+      case 'B_building':
+        destination = const LatLng(43.469596, -79.698068);
+        break;
+      case 'J_building':
+        destination = const LatLng(43.46955, -79.69890);
+        break;
+      case 'C_building':
+        destination = const LatLng(43.46835, -79.69906);
+        break;
+      case 'E_building':
+        destination = const LatLng(43.46775, -79.69987);
+        break;
 
-  Future<void> _onMapCreated(GoogleMapController controller) async {
-    _mapController = controller;
-    // Set initial camera position to Sheridan Trafalgar Campus
-    List<geocoding.Location> locations =
-    await geocoding.locationFromAddress("Sheridan Trafalgar Campus");
-    if (locations.isNotEmpty) {
-      geocoding.Location location = locations.first;
-      _mapController.animateCamera(
-        CameraUpdate.newCameraPosition(
-          CameraPosition(
-            target: LatLng(location.latitude!, location.longitude!),
-            zoom: 17.0,
-          ),
-        ),
-      );
-      setState(() {
-        _markers.clear();
-        final marker = Marker(
-          markerId: MarkerId("Sheridan Trafalgar Campus"),
-          position: LatLng(location.latitude!, location.longitude!),
-          infoWindow: InfoWindow(
-            title: "Sheridan Trafalgar Campus",
-            snippet: '${location.latitude}, ${location.longitude}',
-          ),
-        );
-        _markers["Sheridan Trafalgar Campus"] = marker;
-        _currentLocation = LatLng(location.latitude!, location.longitude!);
-      });
-    } else {
-      // Handle case when location is not found
-      print('Location not found');
+      case 'Residence_building':
+        destination = const LatLng(43.46832, -79.69778);
+        break;
+      case 'G_building':
+        destination = const LatLng(43.46698, -79.69984);
+        break;
+      case 'Child_care_center':
+        destination = const LatLng(43.46753, -79.70167);
+        break;
+      case 'Athletic_center':
+        destination = const LatLng(43.46769, -79.70306);
+        break;
+
+    // Add more buildings with their respective coordinates here
     }
-  }
 
-  void _searchLocationByName(String locationName) async {
-    List<geocoding.Location> locations =
-    await geocoding.locationFromAddress(locationName);
-    if (locations.isNotEmpty) {
-      geocoding.Location location = locations.first;
-      _mapController.animateCamera(
-        CameraUpdate.newCameraPosition(
-          CameraPosition(
-            target: LatLng(location.latitude!, location.longitude!),
-            zoom: 17.0,
-          ),
-        ),
-      );
-      setState(() {
-        _markers.clear();
-        final marker = Marker(
-          markerId: MarkerId(locationName),
-          position: LatLng(location.latitude!, location.longitude!),
-          infoWindow: InfoWindow(
-            title: locationName,
-            snippet: '${location.latitude}, ${location.longitude}',
-          ),
-        );
-        _markers[locationName] = marker;
-        _destination = LatLng(location.latitude!, location.longitude!);
-      });
-    } else {
-      // Handle case when location is not found
-      print('Location not found');
-    }
-  }
-
-  void _drawRoute(LatLng destination) async {
-    // Clear existing polylines
     setState(() {
-      _polylines.clear();
-    });
-
-    // Use Directions API to get the route
-    String apiKey = "AIzaSyBPB8AgsQbjJoS_-kIWlPbdI33wToci6aY"; // Replace with your own Google Maps API key
-
-    String baseUrl = "https://maps.googleapis.com/maps/api/directions/json?";
-    String origin = "${_currentLocation!.latitude},${_currentLocation!.longitude}";
-    String dest = "${_destination!.latitude},${_destination!.longitude}";
-    String url = "$baseUrl" "origin=$origin" "&destination=$dest" "&key=$apiKey"; // Update URL construction
-    var response = await http.get(Uri.parse(url));
-
-    if (response.statusCode == 200) {
-      // Decode the response body
-      var decodedData = json.decode(response.body);
-      List<LatLng> routePoints = [];
-
-      // Extract the route polyline points
-      List steps = decodedData["routes"][0]["legs"][0]["steps"];
-      for (var step in steps) {
-        String points = step["polyline"]["points"];
-        routePoints.addAll(decodePolyline(points));
+      _markers.clear();
+      _markers.add(Marker(
+        markerId: const MarkerId("S_building"),
+        position: _sBuilding,
+        infoWindow: const InfoWindow(title: "S Building"),
+      ));
+      if (destination != null) { // Check if destination is not null before adding the marker
+        _markers.add(Marker(
+          markerId: MarkerId(destinationBuildingId),
+          position: destination,
+          infoWindow: const InfoWindow(title: "Destination Building"),
+        ));
       }
-
-      // Draw the polyline on the map
-      setState(() {
-        Polyline polyline = Polyline(
-          polylineId: PolylineId("route"),
-          points: routePoints,
-          color: Colors.blue,
-          width: 4,
-        );
-        _polylines.add(polyline);
-      });
-    } else {
-      // Handle error response
-      print('Failed to fetch route');
-    }
+    });
   }
 
 
+  Widget _buildDropdown() {
+    return DropdownButton<String>(
+      hint: const Text('Select Destination Building'),
+      value: _selectedBuilding,
+      items: const [
+        DropdownMenuItem<String>(
+          value: 'B_building',
+          child: Text('B Building'),
+        ),
+        DropdownMenuItem<String>(
+          value: 'C_building',
+          child: Text('C Building'),
+        ),
+        DropdownMenuItem<String>(
+          value: 'E_building',
+          child: Text('E Building'),
+        ),
+        DropdownMenuItem<String>(
+          value: 'J_building',
+          child: Text('J Building'),
+        ),
+        DropdownMenuItem<String>(
+          value: 'Residence_building',
+          child: Text('Residence Building'),
+        ),
+        DropdownMenuItem<String>(
+          value: 'G_building',
+          child: Text('G Building'),
+        ),
+        DropdownMenuItem<String>(
+          value: 'Child_care_center',
+          child: Text('Child Care Center'),
+        ),
+        DropdownMenuItem<String>(
+          value: 'Athletic_center',
+          child: Text('Athletic Center'),
+        ),
 
-  List<LatLng> decodePolyline(String encoded) {
-    List<LatLng> poly = [];
-    int index = 0,
-        len = encoded.length;
-    int lat = 0,
-        lng = 0;
+        // Add more buildings here
+      ],
+      onChanged: (String? newValue) {
+        if (newValue != null) {
+          setState(() {
+            _selectedBuilding = newValue;
+          });
+          _updateMarkers(newValue);
+          _drawRoute(newValue);
+        }
+      },
+    );
+  }
 
-    while (index < len) {
-      int b,
-          shift = 0,
-          result = 0;
-      do {
-        b = encoded.codeUnitAt(index++) - 63;
-        result |= (b & 0x1F) << shift;
-        shift += 5;
-      } while (b >= 0x20);
-      int dlat = ((result & 1) != 0 ? ~(result >> 1) : (result >> 1));
-      lat += dlat;
+  Future<void> _drawRoute(String destinationBuildingId) async {
+    LatLng? destination;
+    switch (destinationBuildingId) {
+      case 'B_building':
+        destination = const LatLng(43.469596, -79.698068);
+        break;
+      case 'C_building':
+        destination = const LatLng(43.46835, -79.69906);
+        break;
+      case 'E_building':
+        destination = const LatLng(43.46775, -79.69987);
+        break;
+      case 'J_building':
+        destination = const LatLng(43.46955, -79.69890);
+        break;
 
-      shift = 0;
-      result = 0;
-      do {
-        b = encoded.codeUnitAt(index++) - 63;
-        result |= (b & 0x1F) << shift;
-        shift += 5;
-      } while (b >= 0x20);
-      int dlng = ((result & 1) != 0 ? ~(result >> 1) : (result >> 1));
-      lng += dlng;
+      case 'Residence_building':
+        destination = const LatLng(43.46832, -79.69778);
+        break;
+      case 'G_building':
+        destination = const LatLng(43.46698, -79.69984);
+        break;
+      case 'Child_care_center':
+        destination = const LatLng(43.46753, -79.70167);
+        break;
+      case 'Athletic_center':
+        destination = const LatLng(43.46769, -79.70306);
+        break;
 
-      LatLng point = LatLng(lat / 1E5, lng / 1E5);
-      poly.add(point);
+    // Add more buildings with their respective coordinates here
     }
 
-    return poly;
+    if (destination != null) {
+      PolylineResult result = await _polylinePoints.getRouteBetweenCoordinates(
+        // Add your Google Maps API key
+        "AIzaSyBPB8AgsQbjJoS_-kIWlPbdI33wToci6aY",
+        PointLatLng(_sBuilding.latitude, _sBuilding.longitude),
+        PointLatLng(destination.latitude, destination.longitude),
+        travelMode: TravelMode.walking,
+      );
+
+      if (result.points.isNotEmpty) {
+        _polylineCoordinates.clear();
+        setState(() {
+          for (var point in result.points) {
+            _polylineCoordinates.add(LatLng(point.latitude, point.longitude));
+          }
+        });
+
+        setState(() {
+          Polyline polyline = Polyline(
+            polylineId: const PolylineId("route"),
+            color: Colors.red,
+            points: _polylineCoordinates,
+            width: 3,
+          );
+          _polylines.add(polyline);
+        });
+      } else {
+        if (kDebugMode) {
+          print("Error: No points received.");
+        }
+      }
+    } else {
+      if (kDebugMode) {
+        print("Error: Destination not found.");
+      }
+    }
+  }
+
+  bool _isSatelliteView = false;
+
+  Widget _buildMapStyleButton() {
+    return ElevatedButton(
+      onPressed: () {
+        setState(() {
+          _isSatelliteView = !_isSatelliteView;
+        });
+      },
+      child: Text(_isSatelliteView ? 'Normal View' : 'Satellite View'),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       home: Scaffold(
-        appBar: AppBar(title: const Text('Maps Demo')),
+        appBar: AppBar(
+          title: const Text('Sheridan College Oakville Campus Navigation'),
+        ),
         body: Column(
           children: [
-            TextField(
-              controller: _searchController,
-              decoration: InputDecoration(
-                hintText: 'Search for location',
-                contentPadding: EdgeInsets.symmetric(
-                    horizontal: 16, vertical: 8),
-              ),
-              onSubmitted: (value) {
-                _searchLocationByName(value);
-              },
-            ),
+            _buildDropdown(),
+            _buildMapStyleButton(),
             Expanded(
               child: GoogleMap(
-                onMapCreated: _onMapCreated,
+                initialCameraPosition: CameraPosition(target: _sBuilding, zoom: 17, tilt: 45.0),
+                mapType: _isSatelliteView ? MapType.satellite : MapType.normal,
+                markers: _markers,
                 polylines: _polylines,
-                markers: Set<Marker>.of(_markers.values),
-                initialCameraPosition: CameraPosition(
-                  target: LatLng(43.5908, -79.6441),
-                  // Initial camera position to Sheridan Trafalgar Campus
-                  zoom: 17.0,
-                ),
+                onMapCreated: (GoogleMapController controller) {},
               ),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                if (_currentLocation != null && _destination != null) {
-                  _drawRoute(_destination!);
-                } else {
-                  print('Please select current location and destination');
-                }
-              },
-              child: Text('Draw Route'),
             ),
           ],
         ),

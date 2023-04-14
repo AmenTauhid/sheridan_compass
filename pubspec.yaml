@@ -37,6 +37,8 @@ dependencies:
   flutter_keyboard_visibility: ^5.0.0
   geocoding: ^2.0.0
   google_maps_webservice: ^0.0.19
+  flutter_polyline_points: ^1.0.0
+
 
 
 
