@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "593387159786",
+    "project_id": "sheridan-compass-app",
+    "storage_bucket": "sheridan-compass-app.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:593387159786:android:31d5f797caa3270f5c9793",
+        "android_client_info": {
+          "package_name": "sheridan.compass.sheridan_compass"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "593387159786-53lri9e9aadm2mdadprleh5sqm68o3s4.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDXiNCAVkZKMAMXp5FPigEE6JUpenS8z2Y"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "593387159786-53lri9e9aadm2mdadprleh5sqm68o3s4.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
