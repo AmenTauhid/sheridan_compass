@@ -11,6 +11,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:location/location.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
+import 'package:sheridan_compass/history_page.dart';
 
 void main() {
   runApp(const CampusMapPage());
@@ -648,7 +649,10 @@ class CampusMapPage extends StatefulWidget {
               icon: GestureDetector(
                 // When the "History" button is tapped, open the right drawer
                 onTap: () {
-                  _openRightDrawer();
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => HistoryPage()),
+                  );
                 },
                 child: Icon(Icons.history),
               ),
