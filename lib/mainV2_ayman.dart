@@ -38,7 +38,7 @@ class _CampusMapPageState extends State<CampusMapPage> {
   LatLng? _userLocation;
   double? _currentBearing;
   double _remainingDistance = 0;
-  int _currentIndex = 0;
+  int _currentIndex = 1;
   String? _selectedStartingPoint;
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   bool _isSatelliteView = false;
@@ -67,16 +67,12 @@ class _CampusMapPageState extends State<CampusMapPage> {
     _mapController = controller;
   }
 
-  void _onTabTapped(int index) {
-    setState(() {
-      _currentIndex = index;
-    });
-  }
-
   // Prepare the arrow marker icon
   BitmapDescriptor? _arrowIcon;
+
   Future<void> _createArrowIcon() async {
-    _arrowIcon = await BitmapDescriptor.fromAssetImage(const ImageConfiguration(), 'assets/arrow.png');
+    _arrowIcon = await BitmapDescriptor.fromAssetImage(
+        const ImageConfiguration(), 'assets/arrow.png');
   }
 
   void _initLocation() async {
@@ -99,12 +95,13 @@ class _CampusMapPageState extends State<CampusMapPage> {
       }
     }
 
-    _locationSubscription = _location.onLocationChanged.listen((LocationData currentLocation) {
-      _updateUserLocation(currentLocation);
-      if (_selectedBuilding != null) {
-        _drawRoute(_userLocation!, _selectedBuilding!);
-      }
-    });
+    _locationSubscription =
+        _location.onLocationChanged.listen((LocationData currentLocation) {
+          _updateUserLocation(currentLocation);
+          if (_selectedBuilding != null) {
+            _drawRoute(_userLocation!, _selectedBuilding!);
+          }
+        });
   }
 
   void _updateMarkers(String destinationBuildingId) {
@@ -144,8 +141,8 @@ class _CampusMapPageState extends State<CampusMapPage> {
       //   position: _sBuilding,
       //   infoWindow: const InfoWindow(title: "S Building"),
       // ));
-      if (destination != null)
-      { // Check if destination is not null before adding the marker
+      if (destination !=
+          null) { // Check if destination is not null before adding the marker
         _markers.add(Marker(
           markerId: MarkerId(destinationBuildingId),
           position: destination,
@@ -154,6 +151,7 @@ class _CampusMapPageState extends State<CampusMapPage> {
       }
     });
   }
+
   Widget _buildDropdown() {
     return LayoutBuilder(
       builder: (BuildContext context, BoxConstraints constraints) {
@@ -289,7 +287,8 @@ class _CampusMapPageState extends State<CampusMapPage> {
                 setState(() {
                   _selectedStartingPoint = newValue;
                 });
-                _updateMarkers(newValue);}
+                _updateMarkers(newValue);
+              }
             },
           ),
         );
@@ -320,7 +319,8 @@ class _CampusMapPageState extends State<CampusMapPage> {
     }
   }
 
-  Future<void> _drawRoute(LatLng userLocation, String destinationBuildingId) async {
+  Future<void> _drawRoute(LatLng userLocation,
+      String destinationBuildingId) async {
     LatLng? destination;
     switch (destinationBuildingId) {
       case 'B_building':
@@ -351,7 +351,9 @@ class _CampusMapPageState extends State<CampusMapPage> {
     }
 
     if (destination != null) {
-      LatLng startingPoint = _selectedStartingPoint == 'current_location' ? userLocation : _getBuildingCoordinates(_selectedStartingPoint!);
+      LatLng startingPoint = _selectedStartingPoint == 'current_location'
+          ? userLocation
+          : _getBuildingCoordinates(_selectedStartingPoint!);
       PolylineResult result = await _polylinePoints.getRouteBetweenCoordinates(
         // Add your Google Maps API key
         "AIzaSyBPB8AgsQbjJoS_-kIWlPbdI33wToci6aY",
@@ -394,7 +396,6 @@ class _CampusMapPageState extends State<CampusMapPage> {
           'destination': destinationBuildingId,
           'timestamp': Timestamp.now(),
         });
-
       } else {
         if (kDebugMode) {
           print("Error: No points received.");
@@ -455,38 +456,47 @@ class _CampusMapPageState extends State<CampusMapPage> {
   void _updateUserLocation(LocationData currentLocation) {
     setState(() {
       // Remove the existing user_location marker before adding a new one
-      _markers.removeWhere((marker) => marker.markerId == const MarkerId("user_location"));
+      _markers.removeWhere((marker) =>
+      marker.markerId == const MarkerId("user_location"));
       _markers.add(Marker(
         markerId: const MarkerId("user_location"),
         position: LatLng(currentLocation.latitude!, currentLocation.longitude!),
         // icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueAzure),\
         rotation: currentLocation.heading!,
       ));
-      _userLocation = LatLng(currentLocation.latitude!, currentLocation.longitude!);
+      _userLocation =
+          LatLng(currentLocation.latitude!, currentLocation.longitude!);
 
       if (_selectedBuilding != null) {
         _drawRoute(_userLocation!, _selectedBuilding!);
       }
     });
   }
+
 // Create a new function to fetch the travel history from Firebase
   Future<List<Map<String, dynamic>>> _fetchTravelHistory() async {
-    QuerySnapshot querySnapshot = await FirebaseFirestore.instance.collection('travel_history').get();
-    return querySnapshot.docs.map((doc) => doc.data() as Map<String, dynamic>).toList();
+    QuerySnapshot querySnapshot = await FirebaseFirestore.instance.collection(
+        'travel_history').get();
+    return querySnapshot.docs.map((doc) => doc.data() as Map<String, dynamic>)
+        .toList();
   }
 
 // Create a new function to build the history list
   Widget _buildHistoryList() {
     return FutureBuilder<List<Map<String, dynamic>>>(
       future: _fetchTravelHistory(),
-      builder: (BuildContext context, AsyncSnapshot<List<Map<String, dynamic>>> snapshot) {
+      builder: (BuildContext context,
+          AsyncSnapshot<List<Map<String, dynamic>>> snapshot) {
         if (snapshot.hasData) {
           return ListView.builder(
             itemCount: snapshot.data!.length,
             itemBuilder: (BuildContext context, int index) {
               return ListTile(
-                title: Text("From: ${snapshot.data![index]['starting_point']} To: ${snapshot.data![index]['destination']}"),
-                subtitle: Text("Timestamp: ${snapshot.data![index]['timestamp'].toDate()}"),
+                title: Text("From: ${snapshot
+                    .data![index]['starting_point']} To: ${snapshot
+                    .data![index]['destination']}"),
+                subtitle: Text("Timestamp: ${snapshot.data![index]['timestamp']
+                    .toDate()}"),
               );
             },
           );
@@ -531,7 +541,8 @@ class _CampusMapPageState extends State<CampusMapPage> {
             IconButton(
               icon: const Icon(Icons.history),
               onPressed: () {
-                _scaffoldKey.currentState!.openEndDrawer(); // Open the end drawer when the history button is pressed
+                _scaffoldKey.currentState!
+                    .openEndDrawer(); // Open the end drawer when the history button is pressed
               },
             ),
           ],
@@ -564,7 +575,8 @@ class _CampusMapPageState extends State<CampusMapPage> {
         body: Stack(
           children: [
             GoogleMap(
-              initialCameraPosition: CameraPosition(target: _sBuilding, zoom: 17, tilt: 45.0),
+              initialCameraPosition: CameraPosition(
+                  target: _sBuilding, zoom: 17, tilt: 45.0),
               mapType: _isSatelliteView ? MapType.satellite : MapType.normal,
               markers: _markers,
               polylines: _polylines,
@@ -660,7 +672,8 @@ class _CampusMapPageState extends State<CampusMapPage> {
                   'A Project By:\n',
                   style: TextStyle(fontWeight: FontWeight.bold),
                 ),
-                const Text('Ayman Tauhid,\nElias Alissandratos\nand Omar Al-Dulaimi'),
+                const Text(
+                    'Ayman Tauhid,\nElias Alissandratos\nand Omar Al-Dulaimi'),
                 const SizedBox(height: 20),
                 ElevatedButton(
                   onPressed: () {
@@ -671,7 +684,7 @@ class _CampusMapPageState extends State<CampusMapPage> {
                   child: const Text('Switch View'),
                 ),
                 const Spacer(),
-                const Text('Sheridan College'),
+                const Text('Sheridan College, April 2022'),
                 const SizedBox(height: 10),
               ],
             ),
@@ -682,12 +695,12 @@ class _CampusMapPageState extends State<CampusMapPage> {
           onTap: _onTabTapped,
           items: const [
             BottomNavigationBarItem(
-              icon: Icon(Icons.explore),
-              label: 'Explore',
+              icon: Icon(Icons.info),
+              label: 'Information',
             ),
             BottomNavigationBarItem(
-              icon: Icon(Icons.save),
-              label: 'Saved Trips',
+              icon: Icon(Icons.explore),
+              label: 'Explore',
             ),
             BottomNavigationBarItem(
               icon: Icon(Icons.history),
@@ -697,5 +710,21 @@ class _CampusMapPageState extends State<CampusMapPage> {
         ),
       ),
     );
+  }
+
+  void _onTabTapped(int index) {
+    setState(() {
+      _currentIndex = index;
+      switch (index) {
+        case 0:
+          _scaffoldKey.currentState!
+              .openDrawer(); // Open the left drawer when the information button is pressed
+          break;
+        case 2:
+          _scaffoldKey.currentState!
+              .openEndDrawer(); // Open the right drawer when the history button is pressed
+          break;
+      }
+    });
   }
 }
