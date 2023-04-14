@@ -11,7 +11,6 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:location/location.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
-import 'package:sheridan_compass/history_page.dart';
 
 void main() {
   runApp(const CampusMapPage());
@@ -25,7 +24,7 @@ class CampusMapPage extends StatefulWidget {
 }
 
 
-  class _CampusMapPageState extends State<CampusMapPage> {
+class _CampusMapPageState extends State<CampusMapPage> {
   final Set<Marker> _markers = {};
   final Set<Polyline> _polylines = {};
   final LatLng _sBuilding = const LatLng(43.468963, -79.699594);
@@ -37,23 +36,8 @@ class CampusMapPage extends StatefulWidget {
   LatLng? _userLocation;
   double? _currentBearing;
   double _remainingDistance = 0;
-  int _currentIndex = 1;
+  int _currentIndex = 0;
   String? _selectedStartingPoint;
-
-  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
-
-  void _openLeftDrawer() {
-    _scaffoldKey.currentState!.openDrawer();
-  }
-
-  void _openRightDrawer() {
-    _scaffoldKey.currentState!.openEndDrawer();
-  }
-
-  @override
-  void initState() {
-    super.initState();
-  }
 
   void _zoomIn() {
     final GoogleMapController? controller = _mapController;
@@ -77,6 +61,13 @@ class CampusMapPage extends StatefulWidget {
     });
     _mapController = controller;
   }
+
+  void _onTabTapped(int index) {
+    setState(() {
+      _currentIndex = index;
+    });
+  }
+
   // Prepare the arrow marker icon
   BitmapDescriptor? _arrowIcon;
   Future<void> _createArrowIcon() async {
@@ -390,9 +381,7 @@ class CampusMapPage extends StatefulWidget {
             _polylineCoordinates[i + 1],
           );
         }
-        if (kDebugMode) {
-          print("Remaining distance: $_remainingDistance meters");
-        }
+        print("Remaining distance: ${_remainingDistance} meters");
 
         // Add travel history to Firebase
         await FirebaseFirestore.instance.collection('travel_history').add({
@@ -412,7 +401,6 @@ class CampusMapPage extends StatefulWidget {
       }
     }
   }
-
 
   double _distanceBetweenPoints(LatLng point1, LatLng point2) {
     const double earthRadius = 6371000; // Earth's radius in meters
@@ -435,17 +423,23 @@ class CampusMapPage extends StatefulWidget {
   bool _isSatelliteView = false;
   Widget _buildMapStyleButton() {
     return ElevatedButton(
-      style: ElevatedButton.styleFrom(
-        backgroundColor: const Color(0xFF1C355E),
-      ),
-      onPressed: () {
-        setState(() {
-          _isSatelliteView = !_isSatelliteView;
-        });
-        // Your existing onPressed code...
-      },
-      child: Text(_isSatelliteView ? 'Normal View' : 'Satellite View')
+        style: ElevatedButton.styleFrom(
+          backgroundColor: const Color(0xFF1C355E),
+        ),
+        onPressed: () {
+          setState(() {
+            _isSatelliteView = !_isSatelliteView;
+          });
+          // Your existing onPressed code...
+        },
+        child: Text(_isSatelliteView ? 'Normal View' : 'Satellite View')
     );
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _initLocation();
   }
 
   @override
@@ -575,7 +569,6 @@ class CampusMapPage extends StatefulWidget {
         ),
         drawer: Drawer(
           child: Container(
-            padding: EdgeInsets.zero,
             color: Colors.white,
             child: Column(
               children: [
@@ -612,53 +605,20 @@ class CampusMapPage extends StatefulWidget {
             ),
           ),
         ),
-        endDrawer: Drawer(
-          child: Container(
-            padding: EdgeInsets.zero,
-            color: Colors.white,
-            child: Column(
-              children: const [
-                SizedBox(height: 90),
-                Text(
-                  'History',
-                  style: TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                    decoration: TextDecoration.underline,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
         bottomNavigationBar: BottomNavigationBar(
           currentIndex: _currentIndex,
-          items: [
+          onTap: _onTabTapped,
+          items: const [
             BottomNavigationBarItem(
-              icon: GestureDetector(
-                // When the "Information" button is tapped, open the left drawer
-                onTap: () {
-                  _openLeftDrawer();
-                },
-                child: Icon(Icons.info),
-              ),
-              label: 'Information',
-            ),
-            const BottomNavigationBarItem(
               icon: Icon(Icons.explore),
               label: 'Explore',
             ),
             BottomNavigationBarItem(
-              icon: GestureDetector(
-                // When the "History" button is tapped, open the right drawer
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => HistoryPage()),
-                  );
-                },
-                child: Icon(Icons.history),
-              ),
+              icon: Icon(Icons.save),
+              label: 'Saved Trips',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.history),
               label: 'History',
             ),
           ],
