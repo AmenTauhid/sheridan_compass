@@ -41,6 +41,7 @@ class _CampusMapPageState extends State<CampusMapPage> {
   int _currentIndex = 0;
   String? _selectedStartingPoint;
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+  bool _isSatelliteView = false;
 
 
   void _zoomIn() {
@@ -424,7 +425,6 @@ class _CampusMapPageState extends State<CampusMapPage> {
     return degree * pi / 180;
   }
 
-  bool _isSatelliteView = false;
   Widget _buildMapStyleButton() {
     return ElevatedButton(
         style: ElevatedButton.styleFrom(
@@ -639,7 +639,7 @@ class _CampusMapPageState extends State<CampusMapPage> {
             color: Colors.white,
             child: Column(
               children: [
-                const SizedBox(height: 95),
+                SizedBox(height: 95),
                 const Text(
                   '🧭',
                   style: TextStyle(
@@ -656,17 +656,22 @@ class _CampusMapPageState extends State<CampusMapPage> {
                   ),
                 ),
                 const SizedBox(height: 20),
-                ElevatedButton(
-                  onPressed: () {},
-                  child: const Text('About'),
+                const Text(
+                  'A Project By:\n',
+                  style: TextStyle(fontWeight: FontWeight.bold),
                 ),
+                const Text('Ayman Tauhid,\nElias Alissandratos\nand Omar Al-Dulaimi'),
+                const SizedBox(height: 20),
                 ElevatedButton(
-                  onPressed: () {},
-                  child: const Text('Settings'),
+                  onPressed: () {
+                    setState(() {
+                      _isSatelliteView = !_isSatelliteView; // toggle the value
+                    });
+                  },
+                  child: const Text('Switch View'),
                 ),
                 const Spacer(),
-                const Text('Ayman, Elias, & Omar'),
-                const Text('April, 2023'),
+                const Text('Sheridan College'),
                 const SizedBox(height: 10),
               ],
             ),
