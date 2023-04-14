@@ -2,12 +2,15 @@ import 'dart:async';
 import 'dart:math' as math;
 import 'dart:math';
 
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:flutter_polyline_points/flutter_polyline_points.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:location/location.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'firebase_options.dart';
 
 void main() {
   runApp(const CampusMapPage());
@@ -111,16 +114,28 @@ class CampusMapPage extends StatefulWidget {
     LatLng? destination; // Declare destination as nullable
     switch (destinationBuildingId) {
       case 'B_building':
-        destination = const LatLng(43.468240, -79.700551);
+        destination = const LatLng(43.469596, -79.698068);
         break;
       case 'J_building':
-        destination = const LatLng(43.469594, -79.698922);
+        destination = const LatLng(43.46955, -79.69890);
         break;
       case 'C_building':
         destination = const LatLng(43.46835, -79.69906);
         break;
       case 'E_building':
-        destination = const LatLng(43.468275, -79.699808);
+        destination = const LatLng(43.46775, -79.69987);
+        break;
+      case 'Residence_building':
+        destination = const LatLng(43.46832, -79.69778);
+        break;
+      case 'G_building':
+        destination = const LatLng(43.46698, -79.69984);
+        break;
+      case 'Child_care_center':
+        destination = const LatLng(43.46753, -79.70167);
+        break;
+      case 'Athletic_center':
+        destination = const LatLng(43.46769, -79.70306);
         break;
     // Add more buildings with their respective coordinates here
     }
@@ -181,12 +196,29 @@ class CampusMapPage extends StatefulWidget {
                 value: 'J_building',
                 child: Text('J Building'),
               ),
+              DropdownMenuItem<String>(
+                value: 'Residence_building',
+                child: Text('Residence Building'),
+              ),
+              DropdownMenuItem<String>(
+                value: 'G_building',
+                child: Text('G Building'),
+              ),
+              DropdownMenuItem<String>(
+                value: 'Child_care_center',
+                child: Text('Child Care Center'),
+              ),
+              DropdownMenuItem<String>(
+                value: 'Athletic_center',
+                child: Text('Athletic Center'),
+              ),
             ],
             onChanged: (String? newValue) {
               if (newValue != null) {
                 setState(() {
                   _selectedBuilding = newValue;
                 });
+                _updateMarkers(newValue);
               }
             },
           ),
@@ -238,13 +270,29 @@ class CampusMapPage extends StatefulWidget {
                 value: 'J_building',
                 child: Text('J Building'),
               ),
+              DropdownMenuItem<String>(
+                value: 'Residence_building',
+                child: Text('Residence Building'),
+              ),
+              DropdownMenuItem<String>(
+                value: 'G_building',
+                child: Text('G Building'),
+              ),
+              DropdownMenuItem<String>(
+                value: 'Child_care_center',
+                child: Text('Child Care Center'),
+              ),
+              DropdownMenuItem<String>(
+                value: 'Athletic_center',
+                child: Text('Athletic Center'),
+              ),
             ],
             onChanged: (String? newValue) {
               if (newValue != null) {
                 setState(() {
                   _selectedStartingPoint = newValue;
                 });
-              }
+                _updateMarkers(newValue);}
             },
           ),
         );
@@ -262,6 +310,14 @@ class CampusMapPage extends StatefulWidget {
         return const LatLng(43.468275, -79.699808);
       case 'J_building':
         return const LatLng(43.469594, -79.698922);
+      case 'Residence_building':
+        return const LatLng(43.46832, -79.69778);
+      case 'G_building':
+        return const LatLng(43.46698, -79.69984);
+      case 'Child_care_center':
+        return const LatLng(43.46753, -79.70167);
+      case 'Athletic_center':
+        return const LatLng(43.46769, -79.70306);
       default:
         throw Exception('Invalid building ID');
     }
@@ -271,16 +327,28 @@ class CampusMapPage extends StatefulWidget {
     LatLng? destination;
     switch (destinationBuildingId) {
       case 'B_building':
-        destination = const LatLng(43.468240, -79.700551);
+        destination = const LatLng(43.469596, -79.698068);
         break;
       case 'C_building':
         destination = const LatLng(43.46835, -79.69906);
         break;
       case 'E_building':
-        destination = const LatLng(43.468275, -79.699808);
+        destination = const LatLng(43.46775, -79.69987);
         break;
       case 'J_building':
-        destination = const LatLng(43.469594, -79.698922);
+        destination = const LatLng(43.46955, -79.69890);
+        break;
+      case 'Residence_building':
+        destination = const LatLng(43.46832, -79.69778);
+        break;
+      case 'G_building':
+        destination = const LatLng(43.46698, -79.69984);
+        break;
+      case 'Child_care_center':
+        destination = const LatLng(43.46753, -79.70167);
+        break;
+      case 'Athletic_center':
+        destination = const LatLng(43.46769, -79.70306);
         break;
     // Add more buildings with their respective coordinates here
     }
@@ -321,9 +389,15 @@ class CampusMapPage extends StatefulWidget {
             _polylineCoordinates[i + 1],
           );
         }
-        if (kDebugMode) {
-          print("Remaining distance: $_remainingDistance meters");
-        }
+        print("Remaining distance: ${_remainingDistance} meters");
+
+        // Add travel history to Firebase
+        await FirebaseFirestore.instance.collection('travel_history').add({
+          'starting_point': _selectedStartingPoint,
+          'destination': destinationBuildingId,
+          'timestamp': Timestamp.now(),
+        });
+
       } else {
         if (kDebugMode) {
           print("Error: No points received.");
