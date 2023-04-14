@@ -139,7 +139,6 @@ class _CampusMapPageState extends State<CampusMapPage> {
       case 'J_building':
         destination = const LatLng(43.46955, -79.69890);
         break;
-
       case 'Residence_building':
         destination = const LatLng(43.46832, -79.69778);
         break;
@@ -152,7 +151,6 @@ class _CampusMapPageState extends State<CampusMapPage> {
       case 'Athletic_center':
         destination = const LatLng(43.46769, -79.70306);
         break;
-
     // Add more buildings with their respective coordinates here
     }
 
@@ -166,30 +164,19 @@ class _CampusMapPageState extends State<CampusMapPage> {
       );
 
       if (result.points.isNotEmpty) {
-        _polylineCoordinates.clear();
         setState(() {
-          for (var point in result.points) {
+          _polylineCoordinates.clear(); // Clear previous polyline points
+          result.points.forEach((point) {
             _polylineCoordinates.add(LatLng(point.latitude, point.longitude));
-          }
-        });
-
-        setState(() {
-          Polyline polyline = Polyline(
+          });
+          _polylines.clear();
+          _polylines.add(Polyline(
             polylineId: const PolylineId("route"),
-            color: Colors.red,
+            color: Colors.blue,
             points: _polylineCoordinates,
-            width: 3,
-          );
-          _polylines.add(polyline);
+            width: 5,
+          ));
         });
-      } else {
-        if (kDebugMode) {
-          print("Error: No points received.");
-        }
-      }
-    } else {
-      if (kDebugMode) {
-        print("Error: Destination not found.");
       }
     }
   }
